@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Cook Dashboard - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-speedometer2"></i> Cook Dashboard</h2>
+        <p class="text-muted">Welcome, {{ current_user.full_name }}!</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Meals Served Today</h6>
+                        <h4 class="mb-0" id="mealsServed">0</h4>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-utensils fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Low Stock Items</h6>
+                        <h4 class="mb-0" id="lowStockCount">-</h4>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-exclamation-triangle fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Pending Requests</h6>
+                        <h4 class="mb-0" id="pendingRequests">-</h4>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-cart fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Today's Menu</h6>
+                        <h4 class="mb-0" id="menuItems">-</h4>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-menu-button fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="/cook/meal-tracking" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-check-circle"></i> Track Meals
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/cook/inventory" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-box-seam"></i> Check Inventory
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/cook/purchase-requests" class="btn btn-outline-success w-100">
+                            <i class="bi bi-cart-plus"></i> New Request
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Menu & Inventory Alert -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Today's Menu</h5>
+            </div>
+            <div class="card-body">
+                <div id="menuLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="text-muted mt-2">Loading menu...</p>
+                </div>
+                <div id="menuContent" class="d-none">
+                    <div class="row" id="menuItemsList"></div>
+                </div>
+                <div id="noMenu" class="alert alert-info d-none">
+                    <i class="bi bi-info-circle"></i> No menu available for today.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Low Stock Alert -->
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Alert</h5>
+            </div>
+            <div class="card-body">
+                <div id="inventoryLoading" class="text-center py-4">
+                    <div class="spinner-border text-warning"></div>
+                </div>
+                <div id="inventoryContent" class="d-none">
+                    <ul class="list-group list-group-flush" id="lowStockList"></ul>
+                </div>
+                <div id="noLowStock" class="alert alert-light text-center d-none">
+                    <i class="bi bi-check-circle"></i> All stock levels are good!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireRole('cook');
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadTodayMenu();
+    loadLowStockItems();
+});
+
+async function loadDashboardStats() {
+    // Placeholder - will be implemented with proper endpoints
+    document.getElementById('mealsServed').textContent = '0';
+    document.getElementById('pendingRequests').textContent = '0';
+}
+
+async function loadTodayMenu() {
+    const loadingEl = document.getElementById('menuLoading');
+    const contentEl = document.getElementById('menuContent');
+    const noMenuEl = document.getElementById('noMenu');
+    const menuItemsEl = document.getElementById('menuItemsList');
+    
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await Auth.apiCall(`/api/menu/${today}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.menu && data.menu.items && data.menu.items.length > 0) {
+                document.getElementById('menuItems').textContent = data.menu.items.length;
+                
+                menuItemsEl.innerHTML = data.menu.items.map(item => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">${item.dish.name}</h6>
+                                <p class="card-text small text-muted">${item.dish.description || ''}</p>
+                                <span class="badge bg-secondary">${item.dish.category}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+            } else {
+                document.getElementById('menuItems').textContent = '0';
+                loadingEl.classList.add('d-none');
+                noMenuEl.classList.remove('d-none');
+            }
+        } else {
+            throw new Error('Failed to load menu');
+        }
+    } catch (error) {
+        console.error('Error loading menu:', error);
+        loadingEl.classList.add('d-none');
+        noMenuEl.classList.remove('d-none');
+    }
+}
+
+async function loadLowStockItems() {
+    const loadingEl = document.getElementById('inventoryLoading');
+    const contentEl = document.getElementById('inventoryContent');
+    const noLowStockEl = document.getElementById('noLowStock');
+    const lowStockListEl = document.getElementById('lowStockList');
+    
+    try {
+        const response = await Auth.apiCall('/api/cook/inventory');
+        
+        if (response.ok) {
+            const data = await response.json();
+            const lowStock = data.inventory.filter(item => 
+                item.quantity <= item.ingredient.min_stock_level
+            );
+            
+            document.getElementById('lowStockCount').textContent = lowStock.length;
+            
+            if (lowStock.length > 0) {
+                lowStockListEl.innerHTML = lowStock.map(item => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${item.ingredient.name}
+                        <span class="badge bg-danger rounded-pill">
+                            ${item.quantity} ${item.ingredient.unit}
+                        </span>
+                    </li>
+                `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+            } else {
+                loadingEl.classList.add('d-none');
+                noLowStockEl.classList.remove('d-none');
+            }
+        } else {
+            throw new Error('Failed to load inventory');
+        }
+    } catch (error) {
+        console.error('Error loading inventory:', error);
+        loadingEl.classList.add('d-none');
+        noLowStockEl.classList.remove('d-none');
+    }
+}
+</script>
+{% endblock %}

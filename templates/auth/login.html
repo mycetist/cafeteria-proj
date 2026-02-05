@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Login - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="text-center mb-4">
+                    <i class="bi bi-box-arrow-in-right text-primary"></i> Login
+                </h2>
+                
+                <div id="errorAlert" class="alert alert-danger d-none"></div>
+                
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required 
+                               placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required 
+                               placeholder="Enter your password">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="loginBtn">
+                            <span class="spinner-border spinner-border-sm d-none" id="loginSpinner"></span>
+                            Login
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <p class="text-center mb-0">
+                    Don't have an account? <a href="/register">Register here</a>
+                </p>
+                
+                <div class="mt-3 p-2 bg-light rounded">
+                    <small class="text-muted">
+                        <strong>Demo accounts:</strong><br>
+                        Student: student@school.com / student123<br>
+                        Cook: cook@cafeteria.com / cook123<br>
+                        Admin: admin@cafeteria.com / admin123
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    if (!loginForm) {
+        console.error('Login form not found!');
+        return;
+    }
+
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorAlert = document.getElementById('errorAlert');
+        const loginBtn = document.getElementById('loginBtn');
+        const spinner = document.getElementById('loginSpinner');
+        
+        // Show loading
+        loginBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        errorAlert.classList.add('d-none');
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',  // Important: enables cookies
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Store tokens
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Redirect based on role
+                const role = data.user.role;
+                if (role === 'admin') {
+                    window.location.href = '/admin/dashboard';
+                } else if (role === 'cook') {
+                    window.location.href = '/cook/dashboard';
+                } else {
+                    window.location.href = '/student/dashboard';
+                }
+            } else {
+                errorAlert.textContent = data.error || 'Login failed';
+                errorAlert.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            errorAlert.textContent = 'Network error. Please try again.';
+            errorAlert.classList.remove('d-none');
+        } finally {
+            loginBtn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

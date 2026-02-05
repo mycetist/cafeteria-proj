@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-speedometer2"></i> Student Dashboard</h2>
+        <p class="text-muted">Welcome, {{ current_user.full_name }}!</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Subscription</h6>
+                        <h4 class="mb-0" id="subscriptionStatus">Loading...</h4>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-calendar-check fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Meals Remaining</h6>
+                        <h4 class="mb-0" id="mealsRemaining">-</h4>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-utensils fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Today's Menu</h6>
+                        <h4 class="mb-0" id="todayMenu">-</h4>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-menu-button fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Balance</h6>
+                        <h4 class="mb-0" id="balance">$0.00</h4>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-wallet fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="/student/menu" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-menu-button-wide"></i> View Menu
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/student/payment" class="btn btn-outline-success w-100">
+                            <i class="bi bi-credit-card"></i> Make Payment
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/student/allergies" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-exclamation-triangle"></i> Allergies
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/student/reviews" class="btn btn-outline-info w-100">
+                            <i class="bi bi-star"></i> My Reviews
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Menu -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Today's Menu</h5>
+                <a href="/student/menu" class="btn btn-sm btn-primary">View Full Menu</a>
+            </div>
+            <div class="card-body">
+                <div id="menuLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="text-muted mt-2">Loading menu...</p>
+                </div>
+                <div id="menuContent" class="d-none">
+                    <div class="row" id="menuItems"></div>
+                </div>
+                <div id="noMenu" class="alert alert-info d-none">
+                    <i class="bi bi-info-circle"></i> No menu available for today.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div id="activityLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+                <div id="activityContent" class="d-none">
+                    <ul class="list-group list-group-flush" id="activityList"></ul>
+                </div>
+                <div id="noActivity" class="alert alert-light text-center d-none">
+                    <i class="bi bi-inbox"></i> No recent activity
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+<script>
+// Load dashboard data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    loadTodayMenu();
+    loadRecentActivity();
+});
+
+async function loadDashboardData() {
+    try {
+        const response = await Auth.apiCall('/api/subscription');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.subscription) {
+                document.getElementById('subscriptionStatus').textContent = 'Active';
+                document.getElementById('mealsRemaining').textContent = data.subscription.meals_remaining;
+            } else {
+                document.getElementById('subscriptionStatus').textContent = 'None';
+                document.getElementById('mealsRemaining').textContent = '-';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading subscription:', error);
+        document.getElementById('subscriptionStatus').textContent = 'Error';
+    }
+}
+
+async function loadTodayMenu() {
+    const loadingEl = document.getElementById('menuLoading');
+    const contentEl = document.getElementById('menuContent');
+    const noMenuEl = document.getElementById('noMenu');
+    const menuItemsEl = document.getElementById('menuItems');
+    
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await Auth.apiCall(`/api/menu/${today}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.menu && data.menu.items && data.menu.items.length > 0) {
+                document.getElementById('todayMenu').textContent = data.menu.items.length + ' items';
+                
+                menuItemsEl.innerHTML = data.menu.items.slice(0, 4).map(item => `
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center p-2 border rounded">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${item.dish.name}</h6>
+                                <small class="text-muted">${item.dish.category}</small>
+                            </div>
+                            <span class="badge bg-primary">$${item.dish.price}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+            } else {
+                document.getElementById('todayMenu').textContent = 'No menu';
+                loadingEl.classList.add('d-none');
+                noMenuEl.classList.remove('d-none');
+            }
+        } else {
+            throw new Error('Failed to load menu');
+        }
+    } catch (error) {
+        console.error('Error loading menu:', error);
+        loadingEl.classList.add('d-none');
+        noMenuEl.classList.remove('d-none');
+    }
+}
+
+async function loadRecentActivity() {
+    const loadingEl = document.getElementById('activityLoading');
+    const contentEl = document.getElementById('activityContent');
+    const noActivityEl = document.getElementById('noActivity');
+    const activityListEl = document.getElementById('activityList');
+    
+    // Placeholder for now - will be implemented with meal records endpoint
+    loadingEl.classList.add('d-none');
+    noActivityEl.classList.remove('d-none');
+}
+</script>
+{% endblock %}

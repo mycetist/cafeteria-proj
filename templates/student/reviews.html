@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Reviews - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-star"></i> My Reviews</h2>
+        <p class="text-muted">Rate dishes and share your feedback</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Write a Review</h5>
+            </div>
+            <div class="card-body">
+                <form id="reviewForm">
+                    <div class="mb-3">
+                        <label class="form-label">Select Dish</label>
+                        <select class="form-select" id="dishSelect" required>
+                            <option value="">Choose a dish...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rating</label>
+                        <select class="form-select" id="rating" required>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Terrible</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment</label>
+                        <textarea class="form-control" id="comment" rows="3" placeholder="Share your experience..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">My Past Reviews</h5>
+            </div>
+            <div class="card-body">
+                <div id="reviewsLoading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm"></div>
+                </div>
+                <div id="reviewsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDishes();
+    loadReviews();
+    
+    document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+            const response = await Auth.apiCall('/api/reviews', {
+                method: 'POST',
+                body: JSON.stringify({
+                    dish_id: parseInt(document.getElementById('dishSelect').value),
+                    rating: parseInt(document.getElementById('rating').value),
+                    comment: document.getElementById('comment').value
+                })
+            });
+            
+            if (response.ok) {
+                document.getElementById('reviewForm').reset();
+                loadReviews();
+                alert('Review submitted!');
+            }
+        } catch (error) {
+            alert('Error submitting review');
+        }
+    });
+});
+
+async function loadDishes() {
+    const select = document.getElementById('dishSelect');
+    
+    try {
+        const response = await Auth.apiCall('/api/menu');
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Get unique dishes from menu
+            const dishes = [];
+            const seen = new Set();
+            
+            data.menus?.forEach(menu => {
+                menu.items?.forEach(item => {
+                    if (!seen.has(item.dish.id)) {
+                        seen.add(item.dish.id);
+                        dishes.push(item.dish);
+                    }
+                });
+            });
+            
+            select.innerHTML = '<option value="">Choose a dish...</option>' +
+                dishes.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading dishes:', error);
+    }
+}
+
+async function loadReviews() {
+    const loadingEl = document.getElementById('reviewsLoading');
+    const listEl = document.getElementById('reviewsList');
+    
+    try {
+        const response = await Auth.apiCall('/api/reviews');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.reviews && data.reviews.length > 0) {
+                listEl.innerHTML = data.reviews.map(r => `
+                    <div class="border-bottom p-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>${r.dish?.name || 'Unknown Dish'}</strong>
+                            <span class="text-warning">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                        </div>
+                        <p class="mb-0 small text-muted">${r.comment || ''}</p>
+                    </div>
+                `).join('');
+            } else {
+                listEl.innerHTML = '<p class="text-muted text-center">No reviews yet</p>';
+            }
+            
+            loadingEl.classList.add('d-none');
+        }
+    } catch (error) {
+        listEl.innerHTML = '<p class="text-danger text-center">Error loading reviews</p>';
+        loadingEl.classList.add('d-none');
+    }
+}
+</script>
+{% endblock %}

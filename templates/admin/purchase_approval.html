@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Approval - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
+            <div class="sidebar-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Admin Menu</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/statistics">
+                            <i class="bi bi-graph-up me-2"></i>Statistics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active text-white bg-primary" href="/admin/purchase-approval">
+                            <i class="bi bi-cart-check me-2"></i>Purchase Approval
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/reports">
+                            <i class="bi bi-file-earmark-text me-2"></i>Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Purchase Approval</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadRequests('all')">All</button>
+                        <button class="btn btn-sm btn-outline-warning active" onclick="loadRequests('pending')">Pending</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="loadRequests('approved')">Approved</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="loadRequests('rejected')">Rejected</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alert-container"></div>
+
+            <!-- Purchase Requests Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Purchase Requests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Creator</th>
+                                    <th>Created</th>
+                                    <th>Items</th>
+                                    <th>Total Cost</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requests-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Loading purchase requests...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Request Details Modal -->
+            <div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Purchase Request Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="request-details">
+                            <!-- Content loaded dynamically -->
+                        </div>
+                        <div class="modal-footer" id="request-actions">
+                            <!-- Actions loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+let currentFilter = 'pending';
+let currentRequestId = null;
+
+// Load requests on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRequests('pending');
+});
+
+async function loadRequests(filter = 'all') {
+    currentFilter = filter;
+    
+    // Update button states
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event?.target?.classList.add('active');
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const url = filter === 'all' 
+            ? '/api/admin/purchase-requests'
+            : `/api/admin/purchase-requests?status=${filter}`;
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderRequestsTable(data.purchase_requests);
+        } else {
+            showAlert('Failed to load purchase requests', 'danger');
+        }
+    } catch (error) {
+        console.error('Error loading requests:', error);
+        showAlert('Error loading purchase requests', 'danger');
+    }
+}
+
+function renderRequestsTable(requests) {
+    const tbody = document.getElementById('requests-table-body');
+    
+    if (requests.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted">No purchase requests found</td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = requests.map(req => {
+        const itemCount = req.items ? req.items.length : 0;
+        const statusBadge = getStatusBadge(req.status);
+        
+        let actions = '';
+        if (req.status === 'pending') {
+            actions = `
+                <button class="btn btn-sm btn-success me-1" onclick="approveRequest(${req.id})">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="rejectRequest(${req.id})">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            `;
+        } else {
+            actions = `<span class="text-muted">-</span>`;
+        }
+        
+        return `
+            <tr>
+                <td>${req.id}</td>
+                <td>${req.creator_name || 'Unknown'}</td>
+                <td>${new Date(req.created_at).toLocaleDateString()}</td>
+                <td>${itemCount} items</td>
+                <td>$${(req.total_cost || 0).toFixed(2)}</td>
+                <td>${statusBadge}</td>
+                <td>${actions}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="badge bg-warning">Pending</span>',
+        'approved': '<span class="badge bg-success">Approved</span>',
+        'rejected': '<span class="badge bg-danger">Rejected</span>'
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+}
+
+async function approveRequest(requestId) {
+    if (!confirm('Are you sure you want to approve this purchase request?')) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/admin/purchase-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'approved' })
+        });
+        
+        if (response.ok) {
+            showAlert('Purchase request approved successfully', 'success');
+            loadRequests(currentFilter);
+        } else {
+            showAlert('Failed to approve request', 'danger');
+        }
+    } catch (error) {
+        console.error('Error approving request:', error);
+        showAlert('Error approving request', 'danger');
+    }
+}
+
+async function rejectRequest(requestId) {
+    if (!confirm('Are you sure you want to reject this purchase request?')) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/admin/purchase-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'rejected' })
+        });
+        
+        if (response.ok) {
+            showAlert('Purchase request rejected', 'success');
+            loadRequests(currentFilter);
+        } else {
+            showAlert('Failed to reject request', 'danger');
+        }
+    } catch (error) {
+        console.error('Error rejecting request:', error);
+        showAlert('Error rejecting request', 'danger');
+    }
+}
+
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    container.appendChild(alert);
+    
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Tracking - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-check-circle"></i> Meal Tracking</h2>
+        <p class="text-muted">Track meal distribution and confirm student meals</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Today's Meal Distribution</h5>
+    </div>
+    <div class="card-body">
+        <div id="trackingLoading" class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="trackingContent" class="d-none">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Meal</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="trackingTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireRole('cook');
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTodayMeals();
+});
+
+async function loadTodayMeals() {
+    const loadingEl = document.getElementById('trackingLoading');
+    const contentEl = document.getElementById('trackingContent');
+    const tableEl = document.getElementById('trackingTable');
+    
+    try {
+        const response = await Auth.apiCall('/api/cook/meals/today');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.meals && data.meals.length > 0) {
+                tableEl.innerHTML = data.meals.map(m => `
+                    <tr>
+                        <td>${m.user?.full_name || 'Unknown'}</td>
+                        <td>${m.meal_type}</td>
+                        <td>${m.received_at ? new Date(m.received_at).toLocaleTimeString() : '-'}</td>
+                        <td>
+                            <span class="badge ${m.is_confirmed ? 'bg-success' : 'bg-warning'}">
+                                ${m.is_confirmed ? 'Served' : 'Pending'}
+                            </span>
+                        </td>
+                        <td>
+                            ${!m.is_confirmed ? `
+                                <button class="btn btn-sm btn-primary" onclick="serveMeal(${m.id})">
+                                    Mark Served
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No meals today</td></tr>';
+            }
+            
+            loadingEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error loading meals:', error);
+    }
+}
+
+async function serveMeal(mealId) {
+    try {
+        const response = await Auth.apiCall('/api/cook/meals/serve', {
+            method: 'POST',
+            body: JSON.stringify({ meal_id: mealId })
+        });
+        
+        if (response.ok) {
+            loadTodayMeals();
+        }
+    } catch (error) {
+        alert('Error marking meal as served');
+    }
+}
+</script>
+{% endblock %}

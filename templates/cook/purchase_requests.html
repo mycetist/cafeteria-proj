@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Requests - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-cart-plus"></i> Purchase Requests</h2>
+        <p class="text-muted">Create and track purchase requests</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">New Request</h5>
+            </div>
+            <div class="card-body">
+                <form id="requestForm">
+                    <div id="itemsContainer">
+                        <div class="item-row mb-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <select class="form-select ingredient-select" required>
+                                        <option value="">Select ingredient...</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" class="form-control quantity-input" placeholder="Qty" min="1" required>
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeItem(this)" disabled>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addItem()">
+                        <i class="bi bi-plus"></i> Add Item
+                    </button>
+                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">My Requests</h5>
+            </div>
+            <div class="card-body">
+                <div id="requestsLoading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm"></div>
+                </div>
+                <div id="requestsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireRole('cook');
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadIngredients();
+    loadMyRequests();
+    
+    document.getElementById('requestForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const ingredientId = row.querySelector('.ingredient-select').value;
+            const quantity = row.querySelector('.quantity-input').value;
+            if (ingredientId && quantity) {
+                items.push({
+                    ingredient_id: parseInt(ingredientId),
+                    quantity: parseFloat(quantity)
+                });
+            }
+        });
+        
+        try {
+            const response = await Auth.apiCall('/api/cook/purchase-requests', {
+                method: 'POST',
+                body: JSON.stringify({ items })
+            });
+            
+            if (response.ok) {
+                document.getElementById('requestForm').reset();
+                loadMyRequests();
+                alert('Request submitted!');
+            }
+        } catch (error) {
+            alert('Error submitting request');
+        }
+    });
+});
+
+async function loadIngredients() {
+    try {
+        const response = await Auth.apiCall('/api/cook/inventory');
+        if (response.ok) {
+            const data = await response.json();
+            const options = data.inventory.map(i => 
+                `<option value="${i.ingredient.id}">${i.ingredient.name}</option>`
+            ).join('');
+            
+            document.querySelectorAll('.ingredient-select').forEach(select => {
+                select.innerHTML = '<option value="">Select ingredient...</option>' + options;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading ingredients:', error);
+    }
+}
+
+async function loadMyRequests() {
+    const loadingEl = document.getElementById('requestsLoading');
+    const listEl = document.getElementById('requestsList');
+    
+    try {
+        const response = await Auth.apiCall('/api/cook/purchase-requests');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.requests && data.requests.length > 0) {
+                listEl.innerHTML = data.requests.map(r => `
+                    <div class="border-bottom p-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>Request #${r.id}</strong>
+                            <span class="badge bg-${r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}">${r.status}</span>
+                        </div>
+                        <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
+                        <p class="mb-0 small">${r.items?.length || 0} items</p>
+                    </div>
+                `).join('');
+            } else {
+                listEl.innerHTML = '<p class="text-muted text-center">No requests yet</p>';
+            }
+            
+            loadingEl.classList.add('d-none');
+        }
+    } catch (error) {
+        listEl.innerHTML = '<p class="text-danger text-center">Error loading requests</p>';
+        loadingEl.classList.add('d-none');
+    }
+}
+
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const newRow = container.firstElementChild.cloneNode(true);
+    newRow.querySelector('.ingredient-select').value = '';
+    newRow.querySelector('.quantity-input').value = '';
+    newRow.querySelector('button').disabled = false;
+    container.appendChild(newRow);
+}
+
+function removeItem(btn) {
+    btn.closest('.item-row').remove();
+}
+</script>
+{% endblock %}

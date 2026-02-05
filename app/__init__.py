@@ -1,0 +1,64 @@
+from flask import Flask
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+
+from config import get_config
+from app.extensions import db, jwt
+
+
+def create_app(config_name=None):
+    app = Flask(__name__, 
+                template_folder='../templates',
+                static_folder='../static')
+    
+    config = get_config(config_name)
+    app.config.from_object(config)
+    
+    init_extensions(app)
+    register_blueprints(app)
+    register_error_handlers(app)
+    
+    return app
+
+
+def init_extensions(app):
+    db.init_app(app)
+    jwt.init_app(app)
+    Migrate(app, db)
+    CORS(app, origins=app.config['CORS_ORIGINS'])
+
+
+def register_blueprints(app):
+    from app.api import auth_bp, student_bp, cook_bp, admin_bp, common_bp
+    from app.routes import pages_bp
+    
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(student_bp, url_prefix='/api')
+    app.register_blueprint(cook_bp, url_prefix='/api/cook')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(common_bp, url_prefix='/api')
+    app.register_blueprint(pages_bp)
+
+
+def register_error_handlers(app):
+    from flask import jsonify
+    from werkzeug.exceptions import HTTPException
+    
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        response = {
+            'error': e.name,
+            'message': e.description,
+            'status_code': e.code
+        }
+        return jsonify(response), e.code
+    
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        response = {
+            'error': 'Internal Server Error',
+            'message': str(e) if app.config['DEBUG'] else 'An unexpected error occurred',
+            'status_code': 500
+        }
+        return jsonify(response), 500

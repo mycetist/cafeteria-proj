@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Payment - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-credit-card"></i> Payment</h2>
+        <p class="text-muted">Make payments and manage subscriptions</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-wallet2"></i> Current Subscription</h5>
+            </div>
+            <div class="card-body">
+                <div id="subscriptionLoading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+                <div id="subscriptionContent" class="d-none">
+                    <div id="hasSubscription">
+                        <p><strong>Type:</strong> <span id="subType">-</span></p>
+                        <p><strong>Valid until:</strong> <span id="subEnd">-</span></p>
+                        <p><strong>Meals remaining:</strong> <span id="subMeals">-</span></p>
+                    </div>
+                    <div id="noSubscription" class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No active subscription.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cart-plus"></i> Purchase Subscription</h5>
+            </div>
+            <div class="card-body">
+                <form id="subscriptionForm">
+                    <div class="mb-3">
+                        <label class="form-label">Subscription Type</label>
+                        <select class="form-select" id="subscriptionType" required>
+                            <option value="">Select type...</option>
+                            <option value="daily">Daily (1 meal) - $5.00</option>
+                            <option value="weekly">Weekly (5 meals) - $22.00</option>
+                            <option value="monthly">Monthly (20 meals) - $80.00</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Purchase
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Single Payment</h5>
+            </div>
+            <div class="card-body">
+                <form id="singlePaymentForm">
+                    <div class="mb-3">
+                        <label class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="paymentAmount" min="1" step="0.01" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Pay Now
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadSubscription();
+    
+    document.getElementById('subscriptionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const type = document.getElementById('subscriptionType').value;
+        if (!type) return;
+        
+        try {
+            const response = await Auth.apiCall('/api/subscription', {
+                method: 'POST',
+                body: JSON.stringify({ subscription_type: type })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('Subscription purchased successfully!');
+                loadSubscription();
+            } else {
+                alert(data.error || 'Purchase failed');
+            }
+        } catch (error) {
+            alert('Network error. Please try again.');
+        }
+    });
+    
+    document.getElementById('singlePaymentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const amount = document.getElementById('paymentAmount').value;
+        
+        try {
+            const response = await Auth.apiCall('/api/payment', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    amount: parseFloat(amount),
+                    payment_type: 'single'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('Payment successful!');
+                document.getElementById('paymentAmount').value = '';
+            } else {
+                alert(data.error || 'Payment failed');
+            }
+        } catch (error) {
+            alert('Network error. Please try again.');
+        }
+    });
+});
+
+async function loadSubscription() {
+    const loadingEl = document.getElementById('subscriptionLoading');
+    const contentEl = document.getElementById('subscriptionContent');
+    
+    try {
+        const response = await Auth.apiCall('/api/subscription');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.subscription && data.subscription.is_active) {
+                document.getElementById('subType').textContent = data.subscription.subscription_type;
+                document.getElementById('subEnd').textContent = data.subscription.end_date;
+                document.getElementById('subMeals').textContent = data.subscription.meals_remaining;
+                document.getElementById('hasSubscription').classList.remove('d-none');
+                document.getElementById('noSubscription').classList.add('d-none');
+            } else {
+                document.getElementById('hasSubscription').classList.add('d-none');
+                document.getElementById('noSubscription').classList.remove('d-none');
+            }
+            
+            loadingEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error loading subscription:', error);
+    }
+}
+</script>
+{% endblock %}

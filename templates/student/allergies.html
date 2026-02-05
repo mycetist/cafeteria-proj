@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Allergies - School Cafeteria{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-exclamation-triangle"></i> My Allergies</h2>
+        <p class="text-muted">Manage your dietary restrictions and allergies</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Add New Allergy</h5>
+            </div>
+            <div class="card-body">
+                <form id="allergyForm">
+                    <div class="mb-3">
+                        <label class="form-label">Allergy Type</label>
+                        <input type="text" class="form-control" id="allergyType" required placeholder="e.g., nuts, dairy, gluten">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="allergyNotes" rows="2" placeholder="Additional information..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Allergy</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">My Allergies</h5>
+            </div>
+            <div class="card-body">
+                <div id="allergiesLoading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm"></div>
+                </div>
+                <div id="allergiesList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllergies();
+    
+    document.getElementById('allergyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+            const response = await Auth.apiCall('/api/allergies', {
+                method: 'POST',
+                body: JSON.stringify({
+                    allergy_type: document.getElementById('allergyType').value,
+                    notes: document.getElementById('allergyNotes').value
+                })
+            });
+            
+            if (response.ok) {
+                document.getElementById('allergyForm').reset();
+                loadAllergies();
+            }
+        } catch (error) {
+            alert('Error adding allergy');
+        }
+    });
+});
+
+async function loadAllergies() {
+    const loadingEl = document.getElementById('allergiesLoading');
+    const listEl = document.getElementById('allergiesList');
+    
+    try {
+        const response = await Auth.apiCall('/api/allergies');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.allergies && data.allergies.length > 0) {
+                listEl.innerHTML = data.allergies.map(a => `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div>
+                            <strong>${a.allergy_type}</strong>
+                            <p class="mb-0 small text-muted">${a.notes || ''}</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAllergy(${a.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                listEl.innerHTML = '<p class="text-muted text-center">No allergies recorded</p>';
+            }
+            
+            loadingEl.classList.add('d-none');
+        }
+    } catch (error) {
+        listEl.innerHTML = '<p class="text-danger text-center">Error loading allergies</p>';
+        loadingEl.classList.add('d-none');
+    }
+}
+
+async function deleteAllergy(id) {
+    if (!confirm('Delete this allergy?')) return;
+    
+    try {
+        const response = await Auth.apiCall(`/api/allergies/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadAllergies();
+        }
+    } catch (error) {
+        alert('Error deleting allergy');
+    }
+}
+</script>
+{% endblock %}

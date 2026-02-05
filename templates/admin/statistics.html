@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
+            <div class="sidebar-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Admin Menu</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active text-white bg-primary" href="/admin/statistics">
+                            <i class="bi bi-graph-up me-2"></i>Statistics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/purchase-approval">
+                            <i class="bi bi-cart-check me-2"></i>Purchase Approval
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/reports">
+                            <i class="bi bi-file-earmark-text me-2"></i>Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Statistics</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-7days" onclick="loadStatistics(7)">7 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-30days" onclick="loadStatistics(30)">30 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-90days" onclick="loadStatistics(90)">90 Days</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Revenue</h5>
+                            <h2 class="card-text" id="total-revenue">$0.00</h2>
+                            <p class="card-text"><small>Completed payments</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Meals</h5>
+                            <h2 class="card-text" id="total-meals">0</h2>
+                            <p class="card-text"><small>Served to students</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">Active Subscriptions</h5>
+                            <h2 class="card-text" id="active-subscriptions">0</h2>
+                            <p class="card-text"><strong>Click on card to view</strong></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-danger">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Students</h5>
+                            <h2 class="card-text" id="total-students">0</h2>
+                            <p class="card-text"><strong>Click on card to view</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Revenue Trend</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="revenueChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Revenue by Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="revenueTypeChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meals Section -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Daily Attendance</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="attendanceChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Meals by Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h1 class="display-4 text-primary" id="breakfast-count">0</h1>
+                                    <p class="text-muted">Breakfasts</p>
+                                </div>
+                                <div class="col-6">
+                                    <h1 class="display-4 text-success" id="lunch-count">0</h1>
+                                    <p class="text-muted">Lunches</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let currentDays = 30;
+
+// Load statistics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics(30);
+    loadDashboardStats();
+});
+
+async function loadStatistics(days) {
+    currentDays = days;
+    
+    // Update button states
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`btn-${days}days`).classList.add('active');
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        
+        // Fetch payment statistics
+        const paymentResponse = await fetch(`/api/admin/statistics/payments?days=${days}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (paymentResponse.ok) {
+            const paymentData = await paymentResponse.json();
+            updatePaymentStats(paymentData);
+            updateRevenueChart(paymentData.daily_revenue);
+            updateRevenueTypeChart(paymentData);
+        }
+        
+        // Fetch attendance statistics
+        const attendanceResponse = await fetch(`/api/admin/statistics/attendance?days=${days}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (attendanceResponse.ok) {
+            const attendanceData = await attendanceResponse.json();
+            updateAttendanceStats(attendanceData);
+            updateAttendanceChart(attendanceData.daily_attendance);
+        }
+        
+    } catch (error) {
+        console.error('Error loading statistics:', error);
+    }
+}
+
+async function loadDashboardStats() {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('/api/admin/statistics/dashboard', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('active-subscriptions').textContent = data.users.active_subscriptions;
+            document.getElementById('total-students').textContent = data.users.total_students;
+        }
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+
+function updatePaymentStats(data) {
+    document.getElementById('total-revenue').textContent = '$' + data.total_revenue.toFixed(2);
+}
+
+function updateAttendanceStats(data) {
+    document.getElementById('total-meals').textContent = data.total_meals;
+    document.getElementById('breakfast-count').textContent = data.breakfast_count || 0;
+    document.getElementById('lunch-count').textContent = data.lunch_count || 0;
+}
+
+function updateRevenueChart(dailyData) {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    if (window.revenueChartInstance) {
+        window.revenueChartInstance.destroy();
+    }
+    
+    window.revenueChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => d.date.substring(5)), // MM-DD
+            datasets: [{
+                label: 'Daily Revenue ($)',
+                data: dailyData.map(d => d.revenue),
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateRevenueTypeChart(data) {
+    const ctx = document.getElementById('revenueTypeChart').getContext('2d');
+    
+    if (window.revenueTypeChartInstance) {
+        window.revenueTypeChartInstance.destroy();
+    }
+    
+    window.revenueTypeChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Single Payments', 'Subscriptions'],
+            datasets: [{
+                data: [data.single_revenue || 0, data.subscription_revenue || 0],
+                backgroundColor: ['#0d6efd', '#198754'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function updateAttendanceChart(dailyData) {
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    
+    if (window.attendanceChartInstance) {
+        window.attendanceChartInstance.destroy();
+    }
+    
+    window.attendanceChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dailyData.map(d => d.date.substring(5)), // MM-DD
+            datasets: [{
+                label: 'Meals Served',
+                data: dailyData.map(d => d.count),
+                backgroundColor: '#0dcaf0',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

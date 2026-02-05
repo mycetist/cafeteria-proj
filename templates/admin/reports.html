@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% block title %}Отчеты - Панель администратора{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" style="background: #f8f9fa; min-height: calc(100vh - 60px);">
+            <div class="position-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Администратор</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2"></i> Панель управления
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/statistics">
+                            <i class="bi bi-graph-up"></i> Статистика
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/purchase-approval">
+                            <i class="bi bi-cart-check"></i> Заявки на закупку
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/reports">
+                            <i class="bi bi-file-earmark-text"></i> Отчеты
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Отчеты</h1>
+            </div>
+
+            <!-- Report Generation Cards -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-utensils"></i> Отчет по питанию</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Статистика посещаемости столовой, количество выданных обедов, популярность блюд.</p>
+                            <form id="mealReportForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Дата начала</label>
+                                        <input type="date" class="form-control" id="mealStartDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Дата окончания</label>
+                                        <input type="date" class="form-control" id="mealEndDate" required>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-search"></i> Сформировать
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="exportMealReport('json')">
+                                        <i class="bi bi-code"></i> JSON
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" onclick="exportMealReport('csv')">
+                                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Финансовый отчет</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Доходы от платежей и абонементов, расходы на закупки, финансовая сводка.</p>
+                            <form id="expenseReportForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Дата начала</label>
+                                        <input type="date" class="form-control" id="expenseStartDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Дата окончания</label>
+                                        <input type="date" class="form-control" id="expenseEndDate" required>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-search"></i> Сформировать
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="exportExpenseReport('json')">
+                                        <i class="bi bi-code"></i> JSON
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" onclick="exportExpenseReport('csv')">
+                                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Results -->
+            <div class="row" id="reportResults" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header" id="reportHeader">
+                            <h5 class="mb-0">Результаты отчета</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Summary Stats -->
+                            <div class="row mb-4" id="summaryStats">
+                                <!-- Filled dynamically -->
+                            </div>
+
+                            <!-- Chart -->
+                            <div class="mb-4">
+                                <canvas id="reportChart" height="100"></canvas>
+                            </div>
+
+                            <!-- Data Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="reportTable">
+                                    <thead id="reportTableHead">
+                                        <!-- Filled dynamically -->
+                                    </thead>
+                                    <tbody id="reportTableBody">
+                                        <!-- Filled dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats Preview -->
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">Быстрая сводка</h4>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Обедов сегодня</h6>
+                            <h3 class="mb-0" id="todayMeals">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Выручка сегодня</h6>
+                            <h3 class="mb-0" id="todayRevenue">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Активных абонементов</h6>
+                            <h3 class="mb-0" id="activeSubscriptions">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Заявок на рассмотрении</h6>
+                            <h3 class="mb-0" id="pendingRequests">-</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Set default dates (current month)
+const today = new Date();
+const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+document.getElementById('mealStartDate').value = firstDay.toISOString().split('T')[0];
+document.getElementById('mealEndDate').value = today.toISOString().split('T')[0];
+document.getElementById('expenseStartDate').value = firstDay.toISOString().split('T')[0];
+document.getElementById('expenseEndDate').value = today.toISOString().split('T')[0];
+
+let currentReportData = null;
+let currentReportType = null;
+
+// Load quick stats on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadQuickStats();
+});
+
+async function loadQuickStats() {
+    try {
+        const response = await fetch('/api/admin/statistics/dashboard', {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('todayMeals').textContent = data.today_meals || 0;
+            document.getElementById('todayRevenue').textContent = (data.today_revenue || 0) + ' ₽';
+            document.getElementById('activeSubscriptions').textContent = data.active_subscriptions || 0;
+            document.getElementById('pendingRequests').textContent = data.pending_purchase_requests || 0;
+        }
+    } catch (error) {
+        console.error('Error loading quick stats:', error);
+    }
+}
+
+// Meal Report Form
+document.getElementById('mealReportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const startDate = document.getElementById('mealStartDate').value;
+    const endDate = document.getElementById('mealEndDate').value;
+    await generateMealReport(startDate, endDate);
+});
+
+// Expense Report Form
+document.getElementById('expenseReportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const startDate = document.getElementById('expenseStartDate').value;
+    const endDate = document.getElementById('expenseEndDate').value;
+    await generateExpenseReport(startDate, endDate);
+});
+
+async function generateMealReport(startDate, endDate) {
+    try {
+        const response = await fetch(`/api/admin/reports/meals?start_date=${startDate}&end_date=${endDate}`, {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            currentReportData = data;
+            currentReportType = 'meals';
+            displayMealReport(data);
+        } else {
+            alert('Ошибка при формировании отчета');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Ошибка при формировании отчета');
+    }
+}
+
+async function generateExpenseReport(startDate, endDate) {
+    try {
+        const response = await fetch(`/api/admin/reports/expenses?start_date=${startDate}&end_date=${endDate}`, {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            currentReportData = data;
+            currentReportType = 'expenses';
+            displayExpenseReport(data);
+        } else {
+            alert('Ошибка при формировании отчета');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Ошибка при формировании отчета');
+    }
+}
+
+function displayMealReport(data) {
+    document.getElementById('reportResults').style.display = 'block';
+    document.getElementById('reportHeader').innerHTML = '<h5 class="mb-0"><i class="bi bi-utensils"></i> Отчет по питанию</h5>';
+
+    // Summary stats
+    const summaryHtml = `
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-primary">${data.total_meals || 0}</h4>
+                    <small class="text-muted">Всего обедов</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-success">${data.unique_students || 0}</h4>
+                    <small class="text-muted">Уникальных студентов</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-info">${data.avg_meals_per_day ? data.avg_meals_per_day.toFixed(1) : 0}</h4>
+                    <small class="text-muted">В среднем в день</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-warning">${data.period_days || 0}</h4>
+                    <small class="text-muted">Дней в периоде</small>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('summaryStats').innerHTML = summaryHtml;
+
+    // Chart
+    const ctx = document.getElementById('reportChart').getContext('2d');
+    if (window.reportChartInstance) {
+        window.reportChartInstance.destroy();
+    }
+
+    const dates = Object.keys(data.daily_breakdown || {}).sort();
+    const counts = dates.map(d => data.daily_breakdown[d].count);
+
+    window.reportChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Количество обедов',
+                data: counts,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Динамика посещаемости'
+                }
+            }
+        }
+    });
+
+    // Table
+    let tableHeadHtml = `
+        <tr>
+            <th>Дата</th>
+            <th>Количество обедов</th>
+            <th>Уникальных студентов</th>
+        </tr>
+    `;
+    document.getElementById('reportTableHead').innerHTML = tableHeadHtml;
+
+    let tableBodyHtml = '';
+    dates.forEach(date => {
+        const day = data.daily_breakdown[date];
+        tableBodyHtml += `
+            <tr>
+                <td>${date}</td>
+                <td>${day.count}</td>
+                <td>${day.unique_students}</td>
+            </tr>
+        `;
+    });
+    document.getElementById('reportTableBody').innerHTML = tableBodyHtml;
+}
+
+function displayExpenseReport(data) {
+    document.getElementById('reportResults').style.display = 'block';
+    document.getElementById('reportHeader').innerHTML = '<h5 class="mb-0"><i class="bi bi-cash-stack"></i> Финансовый отчет</h5>';
+
+    // Summary stats
+    const summaryHtml = `
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-success">${data.total_revenue || 0} ₽</h4>
+                    <small class="text-muted">Общий доход</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-danger">${data.total_expenses || 0} ₽</h4>
+                    <small class="text-muted">Общие расходы</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-primary">${data.net_profit || 0} ₽</h4>
+                    <small class="text-muted">Чистая прибыль</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-info">${data.total_transactions || 0}</h4>
+                    <small class="text-muted">Транзакций</small>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('summaryStats').innerHTML = summaryHtml;
+
+    // Chart
+    const ctx = document.getElementById('reportChart').getContext('2d');
+    if (window.reportChartInstance) {
+        window.reportChartInstance.destroy();
+    }
+
+    window.reportChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Доход', 'Расходы'],
+            datasets: [{
+                data: [data.total_revenue || 0, data.total_expenses || 0],
+                backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(255, 99, 132, 0.8)'],
+                borderColor: ['rgb(75, 192, 192)', 'rgb(255, 99, 132)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Соотношение доходов и расходов'
+                }
+            }
+        }
+    });
+
+    // Table
+    let tableHeadHtml = `
+        <tr>
+            <th>Тип</th>
+            <th>Количество</th>
+            <th>Сумма (₽)</th>
+        </tr>
+    `;
+    document.getElementById('reportTableHead').innerHTML = tableHeadHtml;
+
+    let tableBodyHtml = '';
+    tableBodyHtml += `
+        <tr>
+            <td><span class="badge bg-success">Доход</span></td>
+            <td>${data.revenue_count || 0}</td>
+            <td>${data.total_revenue || 0}</td>
+        </tr>
+        <tr>
+            <td><span class="badge bg-danger">Расход</span></td>
+            <td>${data.expense_count || 0}</td>
+            <td>${data.total_expenses || 0}</td>
+        </tr>
+        <tr class="table-primary">
+            <td><strong>Итого</strong></td>
+            <td><strong>${data.total_transactions || 0}</strong></td>
+            <td><strong>${data.net_profit || 0}</strong></td>
+        </tr>
+    `;
+    document.getElementById('reportTableBody').innerHTML = tableBodyHtml;
+}
+
+function exportMealReport(format) {
+    if (!currentReportData || currentReportType !== 'meals') {
+        alert('Сначала сформируйте отчет по питанию');
+        return;
+    }
+    exportReport(currentReportData, 'meal_report', format);
+}
+
+function exportExpenseReport(format) {
+    if (!currentReportData || currentReportType !== 'expenses') {
+        alert('Сначала сформируйте финансовый отчет');
+        return;
+    }
+    exportReport(currentReportData, 'expense_report', format);
+}
+
+function exportReport(data, filename, format) {
+    if (format === 'json') {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } else if (format === 'csv') {
+        // Simple CSV conversion
+        let csv = '';
+        if (currentReportType === 'meals') {
+            csv = 'Date,Count,Unique Students\n';
+            const dates = Object.keys(data.daily_breakdown || {}).sort();
+            dates.forEach(date => {
+                const day = data.daily_breakdown[date];
+                csv += `${date},${day.count},${day.unique_students}\n`;
+            });
+        } else {
+            csv = 'Type,Count,Amount\n';
+            csv += `Revenue,${data.revenue_count || 0},${data.total_revenue || 0}\n`;
+            csv += `Expenses,${data.expense_count || 0},${data.total_expenses || 0}\n`;
+            csv += `Net Profit,,${data.net_profit || 0}\n`;
+        }
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+}
+</script>
+{% endblock %}
