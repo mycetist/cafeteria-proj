@@ -14,8 +14,7 @@ services:
       - proxy_network
 
   web:
-    # CHANGE 1: Use 'build' instead of 'image'
-    build: . 
+    build: .
     container_name: cafeteria_web
     restart: unless-stopped
     environment:
@@ -28,17 +27,10 @@ services:
       JWT_SECRET_KEY: jwt-dev-key-456
     depends_on:
       - db
-    groups:
-      - root
+    # --- DELETED ERROR CAUSING LINES HERE (groups: - root) ---
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # CHANGE 2: REMOVED the '.:/app' volume mapping. 
-      # The code is now copied inside the image by the Dockerfile.
-
     working_dir: /app
-    
-    # CHANGE 3: Cleaned up command
-    # We removed 'apt-get' and 'pip install' because the Dockerfile did it already!
     command: >
       sh -c "
         sleep 5 &&
