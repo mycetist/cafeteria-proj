@@ -14,7 +14,8 @@ services:
       - proxy_network
 
   web:
-    image: python:3.11-slim
+    # CHANGE 1: Use 'build' instead of 'image'
+    build: . 
     container_name: cafeteria_web
     restart: unless-stopped
     environment:
@@ -27,15 +28,20 @@ services:
       JWT_SECRET_KEY: jwt-dev-key-456
     depends_on:
       - db
+    groups:
+      - root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/app 
+      # CHANGE 2: REMOVED the '.:/app' volume mapping. 
+      # The code is now copied inside the image by the Dockerfile.
+
     working_dir: /app
+    
+    # CHANGE 3: Cleaned up command
+    # We removed 'apt-get' and 'pip install' because the Dockerfile did it already!
     command: >
       sh -c "
-        apt-get update && apt-get install -y gcc default-libmysqlclient-dev pkg-config &&
-        pip install -r requirements.txt &&
-        sleep 15 &&
+        sleep 5 &&
         python -c 'from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()' 2>/dev/null || echo 'DB init done' &&
         python seed_data.py 2>/dev/null || echo 'Seed done' &&
         python run.py --host=0.0.0.0 --port=5000
