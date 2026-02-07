@@ -1,8 +1,11 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 class Config:
@@ -41,8 +44,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///cafeteria.db'
-
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR}/instance/cafeteria.db'
 
 class ProductionConfig(Config):
     DEBUG = False
