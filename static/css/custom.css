@@ -2,7 +2,6 @@
  * Custom styles for School Cafeteria Management System
  */
 
-/* THIS IS A TEST EDIT */
 body {
     min-height: 100vh;
     display: flex;
@@ -20,8 +19,7 @@ main {
 }
 
 .card-header {
-    /* background-color: #f8f9fa; */
-    background-color: #ff2929;
+    background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
 }
 
@@ -57,7 +55,7 @@ main {
 }
 
 .menu-card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.30) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
 .menu-card .card-img-top {
