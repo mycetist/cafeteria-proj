@@ -35,13 +35,14 @@ services:
     working_dir: /app
     command: >
       sh -c "
-        echo 'Waiting for DB...' &&
-        sleep 10 &&
-        echo 'Initializing DB...' &&
+        echo 'Waiting for MySQL to start...' &&
+        while ! python -c 'import socket; s = socket.create_connection((\"cafeteria_db\", 3306), timeout=2)' >/dev/null 2>&1; do
+          echo 'MySQL is unavailable - sleeping'
+          sleep 3
+        done &&
+        echo 'MySQL is up! Initializing...' &&
         python -c 'from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()' &&
-        echo 'Seeding Data...' &&
-        python seed_data.py || echo 'Seed failed or already done' &&
-        echo 'Starting Server...' &&
+        python seed_data.py || echo 'Seed failed or done' &&
         python run.py --host=0.0.0.0 --port=5000
       "
     networks:
