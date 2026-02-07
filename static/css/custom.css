@@ -50,15 +50,6 @@ main {
     font-weight: 600;
 }
 
-/* Dashboard cards */
-.dashboard-card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-3px);
-}
-
 /* Menu item cards */
 .menu-card {
     transition: box-shadow 0.2s ease-in-out;
