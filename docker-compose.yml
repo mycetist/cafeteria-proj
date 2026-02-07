@@ -16,9 +16,8 @@ services:
   web:
     build:
       context: .
-      args:
-        BUILD_DATE: "${DATE}"
     container_name: cafeteria_web
+    pull_policy: build   
     restart: unless-stopped
     environment:
       FLASK_ENV: production
