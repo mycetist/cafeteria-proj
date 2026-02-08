@@ -1,12 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Payment - School Cafeteria{% endblock %}
+{% block title %}Оплата - Школьная столовая{% endblock %}
 
 {% block content %}
+<!-- Toast container for notifications -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                <span id="toastMessage">Операция успешна!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <span id="errorToastMessage">Произошла ошибка!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-credit-card"></i> Payment</h2>
-        <p class="text-muted">Make payments and manage subscriptions</p>
+        <h2><i class="bi bi-credit-card"></i> Оплата</h2>
+        <p class="text-muted">Оплата обедов и управление абонементом</p>
     </div>
 </div>
 
@@ -14,7 +36,7 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-wallet2"></i> Current Subscription</h5>
+                <h5 class="mb-0"><i class="bi bi-wallet2"></i> Текущий абонемент</h5>
             </div>
             <div class="card-body">
                 <div id="subscriptionLoading" class="text-center py-3">
@@ -22,12 +44,12 @@
                 </div>
                 <div id="subscriptionContent" class="d-none">
                     <div id="hasSubscription">
-                        <p><strong>Type:</strong> <span id="subType">-</span></p>
-                        <p><strong>Valid until:</strong> <span id="subEnd">-</span></p>
-                        <p><strong>Meals remaining:</strong> <span id="subMeals">-</span></p>
+                        <p><strong>Тип:</strong> <span id="subType">-</span></p>
+                        <p><strong>Действует до:</strong> <span id="subEnd">-</span></p>
+                        <p><strong>Осталось обедов:</strong> <span id="subMeals">-</span></p>
                     </div>
                     <div id="noSubscription" class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> No active subscription.
+                        <i class="bi bi-info-circle"></i> Нет активного абонемента.
                     </div>
                 </div>
             </div>
@@ -37,21 +59,20 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-cart-plus"></i> Purchase Subscription</h5>
+                <h5 class="mb-0"><i class="bi bi-cart-plus"></i> Купить абонемент</h5>
             </div>
             <div class="card-body">
                 <form id="subscriptionForm">
                     <div class="mb-3">
-                        <label class="form-label">Subscription Type</label>
+                        <label class="form-label">Тип абонемента</label>
                         <select class="form-select" id="subscriptionType" required>
-                            <option value="">Select type...</option>
-                            <option value="daily">Daily (1 meal) - $5.00</option>
-                            <option value="weekly">Weekly (5 meals) - $22.00</option>
-                            <option value="monthly">Monthly (20 meals) - $80.00</option>
+                            <option value="">Выберите тип...</option>
+                            <option value="weekly">Недельный (5 обедов) - 700 ₽</option>
+                            <option value="monthly">Месячный (20 обедов) - 2500 ₽</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-circle"></i> Purchase
+                        <i class="bi bi-check-circle"></i> Оплатить
                     </button>
                 </form>
             </div>
@@ -63,16 +84,18 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Single Payment</h5>
+                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Разовая оплата</h5>
             </div>
             <div class="card-body">
+                <p class="text-muted small">Оплатите один обед без оформления абонемента.</p>
                 <form id="singlePaymentForm">
                     <div class="mb-3">
-                        <label class="form-label">Amount ($)</label>
-                        <input type="number" class="form-control" id="paymentAmount" min="1" step="0.01" required>
+                        <label class="form-label">Сумма (₽)</label>
+                        <input type="number" class="form-control" id="paymentAmount" min="1" step="1" value="150" required>
+                        <small class="text-muted">Рекомендуемая сумма: 150 ₽ за обед</small>
                     </div>
                     <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-check-circle"></i> Pay Now
+                        <i class="bi bi-check-circle"></i> Оплатить
                     </button>
                 </form>
             </div>
@@ -85,6 +108,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     loadSubscription();
+    
+    // Helper function to show toast notifications
+    function showToast(message, isError = false) {
+        const toastId = isError ? 'errorToast' : 'successToast';
+        const messageId = isError ? 'errorToastMessage' : 'toastMessage';
+        document.getElementById(messageId).textContent = message;
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+    }
     
     document.getElementById('subscriptionForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -100,13 +132,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (response.ok) {
-                alert('Subscription purchased successfully!');
+                showToast('Абонемент успешно приобретён!');
                 loadSubscription();
             } else {
-                alert(data.error || 'Purchase failed');
+                showToast(data.error || 'Ошибка при покупке', true);
             }
         } catch (error) {
-            alert('Network error. Please try again.');
+            showToast('Ошибка сети. Попробуйте снова.', true);
         }
     });
     
@@ -126,13 +158,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (response.ok) {
-                alert('Payment successful!');
-                document.getElementById('paymentAmount').value = '';
+                showToast('Оплата прошла успешно!');
+                document.getElementById('paymentAmount').value = '150';
             } else {
-                alert(data.error || 'Payment failed');
+                showToast(data.error || 'Ошибка оплаты', true);
             }
         } catch (error) {
-            alert('Network error. Please try again.');
+            showToast('Ошибка сети. Попробуйте снова.', true);
         }
     });
 });
@@ -148,7 +180,11 @@ async function loadSubscription() {
             const data = await response.json();
             
             if (data.subscription && data.subscription.is_active) {
-                document.getElementById('subType').textContent = data.subscription.subscription_type;
+                const typeNames = {
+                    'weekly': 'Недельный',
+                    'monthly': 'Месячный'
+                };
+                document.getElementById('subType').textContent = typeNames[data.subscription.subscription_type] || data.subscription.subscription_type;
                 document.getElementById('subEnd').textContent = data.subscription.end_date;
                 document.getElementById('subMeals').textContent = data.subscription.meals_remaining;
                 document.getElementById('hasSubscription').classList.remove('d-none');

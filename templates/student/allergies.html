@@ -1,12 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Allergies - School Cafeteria{% endblock %}
+{% block title %}Аллергии - Школьная столовая{% endblock %}
 
 {% block content %}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                <span id="toastMessage">Операция успешна!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <span id="errorToastMessage">Произошла ошибка!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-exclamation-triangle"></i> My Allergies</h2>
-        <p class="text-muted">Manage your dietary restrictions and allergies</p>
+        <h2><i class="bi bi-exclamation-triangle"></i> Мои аллергии</h2>
+        <p class="text-muted">Управление диетическими ограничениями и аллергиями</p>
     </div>
 </div>
 
@@ -14,19 +35,19 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Add New Allergy</h5>
+                <h5 class="mb-0">Добавить аллергию</h5>
             </div>
             <div class="card-body">
                 <form id="allergyForm">
                     <div class="mb-3">
-                        <label class="form-label">Allergy Type</label>
-                        <input type="text" class="form-control" id="allergyType" required placeholder="e.g., nuts, dairy, gluten">
+                        <label class="form-label">Тип аллергии</label>
+                        <input type="text" class="form-control" id="allergyType" required placeholder="например: орехи, молочные, глютен">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea class="form-control" id="allergyNotes" rows="2" placeholder="Additional information..."></textarea>
+                        <label class="form-label">Примечания</label>
+                        <textarea class="form-control" id="allergyNotes" rows="2" placeholder="Дополнительная информация..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">Add Allergy</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
                 </form>
             </div>
         </div>
@@ -35,7 +56,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">My Allergies</h5>
+                <h5 class="mb-0">Мои аллергии</h5>
             </div>
             <div class="card-body">
                 <div id="allergiesLoading" class="text-center py-3">
@@ -53,6 +74,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadAllergies();
     
+    // Helper function to show toast notifications
+    function showToast(message, isError = false) {
+        const toastId = isError ? 'errorToast' : 'successToast';
+        const messageId = isError ? 'errorToastMessage' : 'toastMessage';
+        document.getElementById(messageId).textContent = message;
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+    }
+    
     document.getElementById('allergyForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -65,12 +95,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
                 document.getElementById('allergyForm').reset();
+                showToast('Аллергия успешно добавлена!');
                 loadAllergies();
+            } else {
+                showToast(data.error || 'Ошибка при добавлении', true);
             }
         } catch (error) {
-            alert('Error adding allergy');
+            showToast('Ошибка сети. Попробуйте снова.', true);
         }
     });
 });
@@ -98,19 +133,19 @@ async function loadAllergies() {
                     </div>
                 `).join('');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center">No allergies recorded</p>';
+                listEl.innerHTML = '<p class="text-muted text-center">Аллергии не записаны</p>';
             }
             
             loadingEl.classList.add('d-none');
         }
     } catch (error) {
-        listEl.innerHTML = '<p class="text-danger text-center">Error loading allergies</p>';
+        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки аллергий</p>';
         loadingEl.classList.add('d-none');
     }
 }
 
 async function deleteAllergy(id) {
-    if (!confirm('Delete this allergy?')) return;
+    if (!confirm('Удалить эту аллергию?')) return;
     
     try {
         const response = await Auth.apiCall(`/api/allergies/${id}`, {
@@ -121,7 +156,7 @@ async function deleteAllergy(id) {
             loadAllergies();
         }
     } catch (error) {
-        alert('Error deleting allergy');
+        alert('Ошибка при удалении аллергии');
     }
 }
 </script>
