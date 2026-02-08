@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}School Cafeteria{% endblock %}</title>
+    <title>{% block title %}Школьная столовая{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="bi bi-shop"></i> School Cafeteria
+                <i class="bi bi-shop"></i> Школьная столовая
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -29,22 +29,47 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if current_user %}
+                        <!-- Notifications -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell fs-5"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+                                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Уведомления</span>
+                                    <a href="/notifications" class="small text-primary">Все уведомления</a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li id="notificationList">
+                                    <div class="dropdown-item text-center text-muted py-3">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Загрузка...</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        <!-- User Menu -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle"></i> <span id="userName">{{ current_user.full_name }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                                <li><a class="dropdown-item" href="/dashboard"><i class="bi bi-speedometer2"></i> Панель управления</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Выйти</a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="/login">Login</a>
+                            <a class="nav-link" href="/login">Войти</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/register">Register</a>
+                            <a class="nav-link" href="/register">Регистрация</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -57,10 +82,116 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted">
+                        <i class="bi bi-shop"></i> Школьная столовая &copy; 2026
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">
+                        Командный кейс No 2 «Управление столовой»
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Auth JS -->
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    
+    <!-- Notification JS -->
+    <script>
+    // Load notifications on page load for logged-in users
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if current_user %}
+        loadNotifications();
+        // Refresh notifications every 60 seconds
+        setInterval(loadNotifications, 60000);
+        {% endif %}
+    });
+    
+    async function loadNotifications() {
+        try {
+            const response = await Auth.apiCall('/api/notifications');
+            if (response.ok) {
+                const data = await response.json();
+                updateNotificationUI(data.notifications || []);
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+        }
+    }
+    
+    function updateNotificationUI(notifications) {
+        const countEl = document.getElementById('notificationCount');
+        const listEl = document.getElementById('notificationList');
+        
+        const unreadCount = notifications.filter(n => !n.is_read).length;
+        
+        if (unreadCount > 0) {
+            countEl.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            countEl.style.display = 'block';
+        } else {
+            countEl.style.display = 'none';
+        }
+        
+        if (notifications.length > 0) {
+            listEl.innerHTML = notifications.slice(0, 5).map(n => `
+                <li>
+                    <a class="dropdown-item ${!n.is_read ? 'bg-light' : ''}" href="#" onclick="markNotificationRead(${n.id})">
+                        <div class="d-flex align-items-start">
+                            <i class="bi ${n.is_read ? 'bi-envelope-open' : 'bi-envelope'} text-${n.is_read ? 'muted' : 'primary'} me-2"></i>
+                            <div>
+                                <strong class="small">${n.title}</strong>
+                                <p class="mb-0 small text-muted text-truncate" style="max-width: 200px;">${n.message}</p>
+                                <small class="text-muted">${formatNotificationTime(n.created_at)}</small>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            `).join('');
+            
+            if (notifications.length > 5) {
+                listEl.innerHTML += `
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="text-center">
+                        <a href="/notifications" class="dropdown-item text-primary small">Показать все (${notifications.length})</a>
+                    </li>
+                `;
+            }
+        } else {
+            listEl.innerHTML = '<li><span class="dropdown-item text-center text-muted py-3"><i class="bi bi-bell-slash"></i> Нет уведомлений</span></li>';
+        }
+    }
+    
+    function formatNotificationTime(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) return 'Только что';
+        if (diff < 3600000) return Math.floor(diff / 60000) + ' мин. назад';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + ' ч. назад';
+        return date.toLocaleDateString('ru-RU');
+    }
+    
+    async function markNotificationRead(notificationId) {
+        try {
+            await Auth.apiCall(`/api/notifications/${notificationId}/read`, {
+                method: 'PUT'
+            });
+            loadNotifications();
+        } catch (error) {
+            console.error('Error marking notification:', error);
+        }
+    }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

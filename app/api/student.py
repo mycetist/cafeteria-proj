@@ -41,8 +41,18 @@ def get_current_menu():
                 dish_data['reviews_count'] = 0
             dishes.append(dish_data)
     
+    # Include items with dish data for template compatibility
+    menu_data = menu.to_dict()
+    menu_data['items'] = []
+    for item in menu_items:
+        dish = Dish.query.get(item.dish_id)
+        if dish and dish.is_available:
+            item_data = item.to_dict()
+            item_data['dish'] = dish.to_dict()
+            menu_data['items'].append(item_data)
+    
     return jsonify({
-        'menu': menu.to_dict(),
+        'menu': menu_data,
         'dishes': dishes
     }), 200
 
@@ -74,8 +84,18 @@ def get_menu_by_date(menu_date):
         if dish and dish.is_available:
             dishes.append(dish.to_dict())
     
+    # Include items with dish data for template compatibility
+    menu_data = menu.to_dict()
+    menu_data['items'] = []
+    for item in menu_items:
+        dish = Dish.query.get(item.dish_id)
+        if dish and dish.is_available:
+            item_data = item.to_dict()
+            item_data['dish'] = dish.to_dict()
+            menu_data['items'].append(item_data)
+    
     return jsonify({
-        'menu': menu.to_dict(),
+        'menu': menu_data,
         'dishes': dishes
     }), 200
 
@@ -156,26 +176,36 @@ def create_subscription():
     
     today = date.today()
     if subscription_type == 'weekly':
-        end_date = today + timedelta(days=7)
+        days_to_add = 7
         amount = 700.00
-        meals_remaining = 5
+        meals_to_add = 5
     else:
-        end_date = today + timedelta(days=30)
+        days_to_add = 30
         amount = 2500.00
-        meals_remaining = 20
+        meals_to_add = 20
     
     existing = Subscription.query.filter_by(user_id=user_id, is_active=True).first()
-    if existing:
-        existing.is_active = False
     
-    subscription = Subscription(
-        user_id=user_id,
-        subscription_type=subscription_type,
-        start_date=today,
-        end_date=end_date,
-        is_active=True,
-        meals_remaining=meals_remaining
-    )
+    if existing:
+        # Extend existing subscription
+        existing.end_date = existing.end_date + timedelta(days=days_to_add)
+        existing.meals_remaining = existing.meals_remaining + meals_to_add
+        existing.subscription_type = subscription_type
+        subscription = existing
+        message = f'Абонемент продлён до {existing.end_date}. Всего обедов: {existing.meals_remaining}'
+    else:
+        # Create new subscription
+        end_date = today + timedelta(days=days_to_add)
+        subscription = Subscription(
+            user_id=user_id,
+            subscription_type=subscription_type,
+            start_date=today,
+            end_date=end_date,
+            is_active=True,
+            meals_remaining=meals_to_add
+        )
+        db.session.add(subscription)
+        message = f'Ваш {subscription_type} абонемент активен до {end_date}.'
     
     payment = Payment(
         user_id=user_id,
@@ -184,15 +214,13 @@ def create_subscription():
         status='completed',
         transaction_id=f"SUB{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{user_id}"
     )
-    
-    db.session.add(subscription)
     db.session.add(payment)
     db.session.commit()
     
     notification = Notification(
         user_id=user_id,
         title='Абонемент активирован',
-        message=f'Ваш {subscription_type} абонемент активен до {end_date}.'
+        message=message
     )
     db.session.add(notification)
     db.session.commit()
@@ -210,30 +238,41 @@ def confirm_meal():
     user_id = get_jwt_identity()
     data = request.get_json()
     
-    if not data or 'menu_id' not in data:
-        return jsonify({'error': 'menu_id обязателен'}), 400
+    if not data:
+        return jsonify({'error': 'Данные не предоставлены'}), 400
     
-    menu_id = data['menu_id']
-    menu = Menu.query.get(menu_id)
+    meal_type = data.get('meal_type', 'lunch')
+    menu_id = data.get('menu_id')
     
-    if not menu:
-        return jsonify({'error': 'Меню не найдено'}), 404
+    # If menu_id not provided, find today's menu for the meal type
+    if not menu_id:
+        today = date.today()
+        menu = Menu.query.filter_by(
+            menu_date=today,
+            meal_type=meal_type,
+            is_active=True
+        ).first()
+        
+        if not menu:
+            return jsonify({'error': 'Меню на сегодня не найдено'}), 404
+        menu_id = menu.id
+    else:
+        menu = Menu.query.get(menu_id)
+        if not menu:
+            return jsonify({'error': 'Меню не найдено'}), 404
+        meal_type = menu.meal_type
     
-    existing = MealRecord.query.filter_by(
-        user_id=user_id,
-        menu_id=menu_id
+    # Check for existing confirmation today
+    today = date.today()
+    existing = MealRecord.query.filter(
+        MealRecord.user_id == user_id,
+        MealRecord.meal_type == meal_type,
+        db.func.date(MealRecord.received_at) == today,
+        MealRecord.is_confirmed == True
     ).first()
     
     if existing:
-        if existing.is_confirmed:
-            return jsonify({'error': 'Обед уже подтвержден'}), 409
-        existing.is_confirmed = True
-        existing.received_at = datetime.utcnow()
-        db.session.commit()
-        return jsonify({
-            'message': 'Обед подтвержден',
-            'meal_record': existing.to_dict()
-        }), 200
+        return jsonify({'error': 'Вы уже подтвердили получение питания сегодня'}), 409
     
     subscription = Subscription.query.filter_by(
         user_id=user_id,
@@ -261,7 +300,7 @@ def confirm_meal():
     meal_record = MealRecord(
         user_id=user_id,
         menu_id=menu_id,
-        meal_type=menu.meal_type,
+        meal_type=meal_type,
         is_confirmed=True,
         received_at=datetime.utcnow()
     )
@@ -270,7 +309,7 @@ def confirm_meal():
     db.session.commit()
     
     return jsonify({
-        'message': 'Обед успешно подтвержден',
+        'message': 'Питание успешно подтверждено',
         'meal_record': meal_record.to_dict()
     }), 201
 
@@ -353,7 +392,8 @@ def get_reviews():
         review_dict = review.to_dict()
         dish = Dish.query.get(review.dish_id)
         if dish:
-            review_dict['dish_name'] = dish.name
+            # Include full dish object for template compatibility
+            review_dict['dish'] = dish.to_dict()
         reviews_data.append(review_dict)
     
     return jsonify({'reviews': reviews_data}), 200
@@ -370,31 +410,29 @@ def add_review():
     
     dish_id = data.get('dish_id')
     rating = data.get('rating')
-    comment = data.get('comment', '')
+    comment = data.get('comment', '').strip()
     
     if not dish_id:
         return jsonify({'error': 'dish_id обязателен'}), 400
     
     if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
-        return jsonify({'error': 'rating должен быть целым числом от 1 до 5'}), 400
+        return jsonify({'error': 'Оценка должна быть от 1 до 5'}), 400
+    
+    if not comment:
+        return jsonify({'error': 'Комментарий обязателен'}), 400
     
     dish = Dish.query.get(dish_id)
     if not dish:
         return jsonify({'error': 'Блюдо не найдено'}), 404
     
+    # Check for existing review - block duplicates
     existing = Review.query.filter_by(
         user_id=user_id,
         dish_id=dish_id
     ).first()
     
     if existing:
-        existing.rating = rating
-        existing.comment = comment
-        db.session.commit()
-        return jsonify({
-            'message': 'Отзыв обновлен',
-            'review': existing.to_dict()
-        }), 200
+        return jsonify({'error': 'Вы уже оставили отзыв на это блюдо. Вы можете удалить его и оставить новый.'}), 409
     
     review = Review(
         user_id=user_id,
@@ -410,6 +448,25 @@ def add_review():
         'message': 'Отзыв добавлен',
         'review': review.to_dict()
     }), 201
+
+
+@student_bp.route('/reviews/<int:review_id>', methods=['DELETE'])
+@student_required
+def delete_review(review_id):
+    user_id = get_jwt_identity()
+    
+    review = Review.query.filter_by(
+        id=review_id,
+        user_id=user_id
+    ).first()
+    
+    if not review:
+        return jsonify({'error': 'Отзыв не найден'}), 404
+    
+    db.session.delete(review)
+    db.session.commit()
+    
+    return jsonify({'message': 'Отзыв удалён'}), 200
 
 
 @student_bp.route('/notifications', methods=['GET'])
@@ -435,7 +492,7 @@ def get_notifications():
     }), 200
 
 
-@student_bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@student_bp.route('/notifications/<int:notification_id>/read', methods=['PUT', 'POST'])
 @student_required
 def mark_notification_read(notification_id):
     user_id = get_jwt_identity()
@@ -452,3 +509,42 @@ def mark_notification_read(notification_id):
     db.session.commit()
     
     return jsonify({'message': 'Уведомление отмечено как прочитанное'}), 200
+
+
+@student_bp.route('/notifications/read-all', methods=['PUT', 'POST'])
+@student_required
+def mark_all_notifications_read():
+    user_id = get_jwt_identity()
+    
+    Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).update({'is_read': True})
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Все уведомления отмечены как прочитанные'}), 200
+
+
+@student_bp.route('/meals/my', methods=['GET'])
+@student_required
+def get_my_meals():
+    """Get current user's meal records"""
+    user_id = get_jwt_identity()
+    
+    meals = MealRecord.query.filter_by(user_id=user_id).order_by(MealRecord.received_at.desc()).limit(30).all()
+    
+    meals_data = []
+    for meal in meals:
+        meal_dict = meal.to_dict()
+        if meal.menu_id:
+            menu = Menu.query.get(meal.menu_id)
+            if menu:
+                menu_items = MenuItem.query.filter_by(menu_id=menu.id).all()
+                if menu_items:
+                    dish = Dish.query.get(menu_items[0].dish_id)
+                    if dish:
+                        meal_dict['dish_name'] = dish.name
+        meals_data.append(meal_dict)
+    
+    return jsonify({'meals': meals_data}), 200

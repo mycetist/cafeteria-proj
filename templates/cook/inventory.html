@@ -1,38 +1,83 @@
 {% extends "base.html" %}
 
-{% block title %}Inventory - School Cafeteria{% endblock %}
+{% block title %}Склад - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-box-seam"></i> Inventory</h2>
-        <p class="text-muted">Manage ingredient stock levels</p>
+        <h2><i class="bi bi-box-seam"></i> Склад</h2>
+        <p class="text-muted">Управление запасами ингредиентов</p>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Current Stock</h5>
-        <span class="badge bg-warning" id="lowStockBadge">0 Low Stock</span>
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Текущие запасы</h5>
+        <span class="badge bg-warning" id="lowStockBadge">0 с низким запасом</span>
     </div>
     <div class="card-body">
         <div id="inventoryLoading" class="text-center py-4">
             <div class="spinner-border text-primary"></div>
+            <p class="text-muted mt-2">Загрузка данных...</p>
         </div>
         <div id="inventoryContent" class="d-none">
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Ingredient</th>
-                        <th>Current Stock</th>
-                        <th>Min. Required</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Ингредиент</th>
+                        <th>Текущий запас</th>
+                        <th>Мин. требуется</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
                     </tr>
                 </thead>
                 <tbody id="inventoryTable"></tbody>
             </table>
         </div>
+    </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div class="modal fade" id="updateStockModal" tabindex="-1" aria-labelledby="updateStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateStockModalLabel"><i class="bi bi-pencil"></i> Обновить запас</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateStockForm">
+                    <input type="hidden" id="updateInventoryId" value="">
+                    <div class="mb-3">
+                        <label class="form-label">Ингредиент:</label>
+                        <input type="text" class="form-control" id="updateIngredientName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Новое количество:</label>
+                        <input type="number" class="form-control" id="updateQuantity" step="0.1" min="0" required>
+                        <small class="text-muted" id="updateUnit"></small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitStockUpdate()">
+                    <i class="bi bi-check-lg"></i> Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="inventoryToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="inventoryToastHeader">
+            <i class="bi bi-info-circle me-2" id="inventoryToastIcon"></i>
+            <strong class="me-auto" id="inventoryToastTitle">Уведомление</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+        <div class="toast-body" id="inventoryToastMessage"></div>
     </div>
 </div>
 {% endblock %}
@@ -64,26 +109,28 @@ async function loadInventory() {
                     
                     return `
                         <tr class="${isLow ? 'table-warning' : ''}">
-                            <td>${item.ingredient.name}</td>
+                            <td>
+                                <strong>${item.ingredient.name}</strong>
+                            </td>
                             <td>${item.quantity} ${item.ingredient.unit}</td>
                             <td>${item.ingredient.min_stock_level} ${item.ingredient.unit}</td>
                             <td>
                                 <span class="badge ${isLow ? 'bg-danger' : 'bg-success'}">
-                                    ${isLow ? 'Low Stock' : 'OK'}
+                                    ${isLow ? 'Мало' : 'Норма'}
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="updateStock(${item.id}, ${item.quantity})">
-                                    Update
+                                <button class="btn btn-sm btn-outline-primary" onclick="openUpdateModal(${item.id}, '${item.ingredient.name}', ${item.quantity}, '${item.ingredient.unit}')">
+                                    <i class="bi bi-pencil"></i> Обновить
                                 </button>
                             </td>
                         </tr>
                     `;
                 }).join('');
                 
-                document.getElementById('lowStockBadge').textContent = `${lowStockCount} Low Stock`;
+                document.getElementById('lowStockBadge').textContent = `${lowStockCount} с низким запасом`;
             } else {
-                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No inventory data</td></tr>';
+                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Нет данных о запасах</td></tr>';
             }
             
             loadingEl.classList.add('d-none');
@@ -91,12 +138,28 @@ async function loadInventory() {
         }
     } catch (error) {
         console.error('Error loading inventory:', error);
+        loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки данных</div>';
     }
 }
 
-async function updateStock(inventoryId, currentQty) {
-    const newQty = prompt('Enter new quantity:', currentQty);
-    if (newQty === null) return;
+function openUpdateModal(inventoryId, ingredientName, currentQty, unit) {
+    document.getElementById('updateInventoryId').value = inventoryId;
+    document.getElementById('updateIngredientName').value = ingredientName;
+    document.getElementById('updateQuantity').value = currentQty;
+    document.getElementById('updateUnit').textContent = 'Единица измерения: ' + unit;
+    
+    const modal = new bootstrap.Modal(document.getElementById('updateStockModal'));
+    modal.show();
+}
+
+async function submitStockUpdate() {
+    const inventoryId = document.getElementById('updateInventoryId').value;
+    const newQty = document.getElementById('updateQuantity').value;
+    
+    if (newQty === '' || parseFloat(newQty) < 0) {
+        showToast('warning', 'Внимание', 'Введите корректное количество');
+        return;
+    }
     
     try {
         const response = await Auth.apiCall(`/api/cook/inventory/${inventoryId}`, {
@@ -105,11 +168,34 @@ async function updateStock(inventoryId, currentQty) {
         });
         
         if (response.ok) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('updateStockModal'));
+            modal.hide();
+            showToast('success', 'Успешно', 'Запас успешно обновлен');
             loadInventory();
+        } else {
+            const data = await response.json();
+            showToast('danger', 'Ошибка', data.error || 'Не удалось обновить запас');
         }
     } catch (error) {
-        alert('Error updating stock');
+        console.error('Error updating stock:', error);
+        showToast('danger', 'Ошибка', 'Ошибка при обновлении запаса');
     }
+}
+
+function showToast(type, title, message) {
+    const toastEl = document.getElementById('inventoryToast');
+    const toastHeader = document.getElementById('inventoryToastHeader');
+    const toastIcon = document.getElementById('inventoryToastIcon');
+    const toastTitle = document.getElementById('inventoryToastTitle');
+    const toastMessage = document.getElementById('inventoryToastMessage');
+    
+    toastHeader.className = 'toast-header bg-' + type + ' text-white';
+    toastIcon.className = 'bi me-2 ' + (type === 'success' ? 'bi-check-circle' : type === 'warning' ? 'bi-exclamation-triangle' : type === 'danger' ? 'bi-x-circle' : 'bi-info-circle');
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
 }
 </script>
 {% endblock %}

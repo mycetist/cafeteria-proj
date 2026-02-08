@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Statistics - Admin Dashboard{% endblock %}
+{% block title %}Статистика - Панель администратора{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -9,27 +9,27 @@
         <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
             <div class="sidebar-sticky pt-3">
                 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Admin Menu</span>
+                    <span>Меню администратора</span>
                 </h6>
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i>Панель
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active text-white bg-primary" href="/admin/statistics">
-                            <i class="bi bi-graph-up me-2"></i>Statistics
+                            <i class="bi bi-graph-up me-2"></i>Статистика
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/purchase-approval">
-                            <i class="bi bi-cart-check me-2"></i>Purchase Approval
+                            <i class="bi bi-cart-check me-2"></i>Заказы
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/reports">
-                            <i class="bi bi-file-earmark-text me-2"></i>Reports
+                            <i class="bi bi-file-earmark-text me-2"></i>Отчёты
                         </a>
                     </li>
                 </ul>
@@ -39,12 +39,12 @@
         <!-- Main content -->
         <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Statistics</h1>
+                <h1 class="h2">Статистика</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <div class="btn-group me-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-7days" onclick="loadStatistics(7)">7 Days</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-30days" onclick="loadStatistics(30)">30 Days</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-90days" onclick="loadStatistics(90)">90 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-7days" onclick="loadStatistics(7)">7 дней</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-30days" onclick="loadStatistics(30)">30 дней</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-90days" onclick="loadStatistics(90)">90 дней</button>
                     </div>
                 </div>
             </div>
@@ -54,36 +54,36 @@
                 <div class="col-md-3">
                     <div class="card text-white bg-success">
                         <div class="card-body">
-                            <h5 class="card-title">Total Revenue</h5>
-                            <h2 class="card-text" id="total-revenue">$0.00</h2>
-                            <p class="card-text"><small>Completed payments</small></p>
+                            <h5 class="card-title">Общая выручка</h5>
+                            <h2 class="card-text" id="total-revenue">0 ₽</h2>
+                            <p class="card-text"><small>Завершённые платежи</small></p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card text-white bg-info">
                         <div class="card-body">
-                            <h5 class="card-title">Total Meals</h5>
+                            <h5 class="card-title">Всего обедов</h5>
                             <h2 class="card-text" id="total-meals">0</h2>
-                            <p class="card-text"><small>Served to students</small></p>
+                            <p class="card-text"><small>Выдано ученикам</small></p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card text-white bg-warning">
                         <div class="card-body">
-                            <h5 class="card-title">Active Subscriptions</h5>
+                            <h5 class="card-title">Активные абонементы</h5>
                             <h2 class="card-text" id="active-subscriptions">0</h2>
-                            <p class="card-text"><strong>Click on card to view</strong></p>
+                            <p class="card-text"><strong>Нажмите для просмотра</strong></p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card text-white bg-danger">
                         <div class="card-body">
-                            <h5 class="card-title">Total Students</h5>
+                            <h5 class="card-title">Всего учеников</h5>
                             <h2 class="card-text" id="total-students">0</h2>
-                            <p class="card-text"><strong>Click on card to view</strong></p>
+                            <p class="card-text"><strong>Нажмите для просмотра</strong></p>
                         </div>
                     </div>
                 </div>
@@ -94,7 +94,7 @@
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Revenue Trend</h5>
+                            <h5 class="mb-0">Динамика выручки</h5>
                         </div>
                         <div class="card-body">
                             <canvas id="revenueChart" width="400" height="200"></canvas>
@@ -104,7 +104,7 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Revenue by Type</h5>
+                            <h5 class="mb-0">Выручка по типам</h5>
                         </div>
                         <div class="card-body">
                             <canvas id="revenueTypeChart" width="400" height="300"></canvas>
@@ -118,7 +118,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Daily Attendance</h5>
+                            <h5 class="mb-0">Посещаемость</h5>
                         </div>
                         <div class="card-body">
                             <canvas id="attendanceChart" width="400" height="200"></canvas>
@@ -128,17 +128,17 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Meals by Type</h5>
+                            <h5 class="mb-0">Обеды по типам</h5>
                         </div>
                         <div class="card-body">
                             <div class="row text-center">
                                 <div class="col-6">
                                     <h1 class="display-4 text-primary" id="breakfast-count">0</h1>
-                                    <p class="text-muted">Breakfasts</p>
+                                    <p class="text-muted">Завтраки</p>
                                 </div>
                                 <div class="col-6">
                                     <h1 class="display-4 text-success" id="lunch-count">0</h1>
-                                    <p class="text-muted">Lunches</p>
+                                    <p class="text-muted">Обеды</p>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +218,7 @@ async function loadDashboardStats() {
 }
 
 function updatePaymentStats(data) {
-    document.getElementById('total-revenue').textContent = '$' + data.total_revenue.toFixed(2);
+    document.getElementById('total-revenue').textContent = data.total_revenue.toFixed(2) + ' ₽';
 }
 
 function updateAttendanceStats(data) {
@@ -239,7 +239,7 @@ function updateRevenueChart(dailyData) {
         data: {
             labels: dailyData.map(d => d.date.substring(5)), // MM-DD
             datasets: [{
-                label: 'Daily Revenue ($)',
+                label: 'Выручка (₽)',
                 data: dailyData.map(d => d.revenue),
                 borderColor: '#198754',
                 backgroundColor: 'rgba(25, 135, 84, 0.1)',
@@ -259,7 +259,7 @@ function updateRevenueChart(dailyData) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$' + value.toFixed(0);
+                            return value + ' ₽';
                         }
                     }
                 }
@@ -278,7 +278,7 @@ function updateRevenueTypeChart(data) {
     window.revenueTypeChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Single Payments', 'Subscriptions'],
+            labels: ['Разовые платежи', 'Абонементы'],
             datasets: [{
                 data: [data.single_revenue || 0, data.subscription_revenue || 0],
                 backgroundColor: ['#0d6efd', '#198754'],
@@ -308,7 +308,7 @@ function updateAttendanceChart(dailyData) {
         data: {
             labels: dailyData.map(d => d.date.substring(5)), // MM-DD
             datasets: [{
-                label: 'Meals Served',
+                label: 'Обеды',
                 data: dailyData.map(d => d.count),
                 backgroundColor: '#0dcaf0',
                 borderRadius: 4

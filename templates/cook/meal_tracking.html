@@ -1,37 +1,130 @@
 {% extends "base.html" %}
 
-{% block title %}Meal Tracking - School Cafeteria{% endblock %}
+{% block title %}Отслеживание питания - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-check-circle"></i> Meal Tracking</h2>
-        <p class="text-muted">Track meal distribution and confirm student meals</p>
+        <h2><i class="bi bi-check-circle"></i> Отслеживание питания</h2>
+        <p class="text-muted">Отслеживание выдачи питания и подтверждение обедов учеников</p>
     </div>
 </div>
 
+<!-- Student Search Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Поиск ученика</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="studentSearch" placeholder="Введите имя или ID ученика...">
+                    <button class="btn btn-primary" type="button" onclick="searchStudent()">
+                        <i class="bi bi-search"></i> Найти
+                    </button>
+                </div>
+                <div id="studentSearchLoading" class="text-center py-3 d-none">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                    <span class="ms-2">Поиск...</span>
+                </div>
+                <div id="studentSearchResults" class="list-group d-none"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card" id="selectedStudentCard" style="display: none;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Информация об ученике</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Имя:</strong>
+                        <p id="studentName" class="mb-0">-</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Абонемент:</strong>
+                        <p id="studentSubscription" class="mb-0">-</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Аллергии:</strong>
+                        <div id="studentAllergies" class="mt-1">-</div>
+                    </div>
+                </div>
+                <hr>
+                <form id="serveMealForm">
+                    <input type="hidden" id="selectedStudentId" value="">
+                    <div class="mb-3">
+                        <label class="form-label">Тип питания:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="serveMealType" id="serveBreakfast" value="breakfast" checked>
+                            <label class="form-check-label" for="serveBreakfast">
+                                <i class="bi bi-sunrise"></i> Завтрак
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="serveMealType" id="serveLunch" value="lunch">
+                            <label class="form-check-label" for="serveLunch">
+                                <i class="bi bi-sun"></i> Обед
+                            </label>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning d-none" id="noSubscriptionWarning">
+                        <i class="bi bi-exclamation-triangle"></i> У ученика нет активного абонемента!
+                    </div>
+                    <div class="alert alert-danger d-none" id="allergyWarning">
+                        <i class="bi bi-exclamation-circle"></i> <span id="allergyWarningText"></span>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" id="serveMealBtn">
+                        <i class="bi bi-utensils"></i> Выдать питание
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Meal Distribution -->
 <div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">Today's Meal Distribution</h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Сегодняшняя выдача питания</h5>
+        <span class="badge bg-primary" id="totalServed">0 выдано</span>
     </div>
     <div class="card-body">
         <div id="trackingLoading" class="text-center py-4">
             <div class="spinner-border text-primary"></div>
+            <p class="text-muted mt-2">Загрузка данных...</p>
         </div>
         <div id="trackingContent" class="d-none">
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Student</th>
-                        <th>Meal</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Ученик</th>
+                        <th>Тип питания</th>
+                        <th>Время</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
                     </tr>
                 </thead>
                 <tbody id="trackingTable"></tbody>
             </table>
         </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="mealToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="mealToastHeader">
+            <i class="bi bi-info-circle me-2" id="mealToastIcon"></i>
+            <strong class="me-auto" id="mealToastTitle">Уведомление</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+        <div class="toast-body" id="mealToastMessage"></div>
     </div>
 </div>
 {% endblock %}
@@ -42,8 +135,141 @@ requireRole('cook');
 
 document.addEventListener('DOMContentLoaded', function() {
     loadTodayMeals();
+    
+    // Student search on Enter key
+    document.getElementById('studentSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchStudent();
+        }
+    });
+    
+    // Serve meal form
+    document.getElementById('serveMealForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await serveMealToStudent();
+    });
 });
 
+// Search for student
+async function searchStudent() {
+    const query = document.getElementById('studentSearch').value.trim();
+    if (!query) {
+        showToast('warning', 'Внимание', 'Введите имя или ID ученика');
+        return;
+    }
+    
+    const loadingEl = document.getElementById('studentSearchLoading');
+    const resultsEl = document.getElementById('studentSearchResults');
+    
+    loadingEl.classList.remove('d-none');
+    resultsEl.classList.add('d-none');
+    
+    try {
+        const response = await Auth.apiCall(`/api/cook/meals/search-student?q=${encodeURIComponent(query)}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.students && data.students.length > 0) {
+                resultsEl.innerHTML = data.students.map(s => `
+                    <button type="button" class="list-group-item list-group-item-action" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.has_subscription}, ${JSON.stringify(s.allergies || []).map(a => `'${a}'`).join(',')})">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${s.full_name}</strong>
+                                <small class="text-muted d-block">ID: ${s.id}</small>
+                            </div>
+                            <span class="badge ${s.has_subscription ? 'bg-success' : 'bg-warning'}">
+                                ${s.has_subscription ? 'Абонемент активен' : 'Нет абонемента'}
+                            </span>
+                        </div>
+                    </button>
+                `).join('');
+            } else {
+                resultsEl.innerHTML = '<div class="list-group-item text-muted text-center">Ученики не найдены</div>';
+            }
+            
+            loadingEl.classList.add('d-none');
+            resultsEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error searching students:', error);
+        loadingEl.classList.add('d-none');
+        showToast('danger', 'Ошибка', 'Ошибка поиска учеников');
+    }
+}
+
+// Select student for meal serving
+function selectStudent(id, name, hasSubscription, allergies) {
+    document.getElementById('selectedStudentId').value = id;
+    document.getElementById('studentName').textContent = name;
+    document.getElementById('studentSubscription').innerHTML = hasSubscription 
+        ? '<span class="badge bg-success">Активен</span>' 
+        : '<span class="badge bg-warning">Нет абонемента</span>';
+    
+    // Show allergies
+    const allergiesEl = document.getElementById('studentAllergies');
+    if (allergies && allergies.length > 0) {
+        allergiesEl.innerHTML = allergies.map(a => `<span class="badge bg-danger me-1">${a}</span>`).join('');
+        document.getElementById('allergyWarning').classList.remove('d-none');
+        document.getElementById('allergyWarningText').textContent = 'Ученик имеет аллергии: ' + allergies.join(', ');
+    } else {
+        allergiesEl.innerHTML = '<span class="text-muted">Нет указанных аллергий</span>';
+        document.getElementById('allergyWarning').classList.add('d-none');
+    }
+    
+    // Show warning if no subscription
+    if (!hasSubscription) {
+        document.getElementById('noSubscriptionWarning').classList.remove('d-none');
+    } else {
+        document.getElementById('noSubscriptionWarning').classList.add('d-none');
+    }
+    
+    document.getElementById('selectedStudentCard').style.display = 'block';
+    document.getElementById('studentSearchResults').classList.add('d-none');
+}
+
+// Serve meal to selected student
+async function serveMealToStudent() {
+    const studentId = document.getElementById('selectedStudentId').value;
+    const mealType = document.querySelector('input[name="serveMealType"]:checked').value;
+    
+    if (!studentId) {
+        showToast('warning', 'Внимание', 'Сначала выберите ученика');
+        return;
+    }
+    
+    const btn = document.getElementById('serveMealBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Выдача...';
+    
+    try {
+        const response = await Auth.apiCall('/api/cook/meals/serve', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                user_id: parseInt(studentId),
+                meal_type: mealType 
+            })
+        });
+        
+        if (response.ok) {
+            showToast('success', 'Успешно', 'Питание успешно выдано ученику');
+            document.getElementById('selectedStudentCard').style.display = 'none';
+            document.getElementById('studentSearch').value = '';
+            loadTodayMeals();
+        } else {
+            const data = await response.json();
+            showToast('danger', 'Ошибка', data.error || 'Не удалось выдать питание');
+        }
+    } catch (error) {
+        console.error('Error serving meal:', error);
+        showToast('danger', 'Ошибка', 'Ошибка при выдаче питания');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-utensils"></i> Выдать питание';
+    }
+}
+
+// Load today's meals
 async function loadTodayMeals() {
     const loadingEl = document.getElementById('trackingLoading');
     const contentEl = document.getElementById('trackingContent');
@@ -56,27 +282,35 @@ async function loadTodayMeals() {
             const data = await response.json();
             
             if (data.meals && data.meals.length > 0) {
+                const servedCount = data.meals.filter(m => m.is_confirmed).length;
+                document.getElementById('totalServed').textContent = `${servedCount} выдано`;
+                
                 tableEl.innerHTML = data.meals.map(m => `
                     <tr>
-                        <td>${m.user?.full_name || 'Unknown'}</td>
-                        <td>${m.meal_type}</td>
-                        <td>${m.received_at ? new Date(m.received_at).toLocaleTimeString() : '-'}</td>
+                        <td>${m.user?.full_name || 'Неизвестно'}</td>
+                        <td>
+                            <span class="badge ${m.meal_type === 'breakfast' ? 'bg-warning' : 'bg-info'}">
+                                ${m.meal_type === 'breakfast' ? 'Завтрак' : 'Обед'}
+                            </span>
+                        </td>
+                        <td>${m.received_at ? new Date(m.received_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                         <td>
                             <span class="badge ${m.is_confirmed ? 'bg-success' : 'bg-warning'}">
-                                ${m.is_confirmed ? 'Served' : 'Pending'}
+                                ${m.is_confirmed ? 'Выдано' : 'Ожидает'}
                             </span>
                         </td>
                         <td>
                             ${!m.is_confirmed ? `
-                                <button class="btn btn-sm btn-primary" onclick="serveMeal(${m.id})">
-                                    Mark Served
+                                <button class="btn btn-sm btn-primary" onclick="markServed(${m.id})">
+                                    <i class="bi bi-check"></i> Отметить выданным
                                 </button>
-                            ` : '-'}
+                            ` : '<span class="text-success"><i class="bi bi-check-circle"></i></span>'}
                         </td>
                     </tr>
                 `).join('');
             } else {
-                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No meals today</td></tr>';
+                document.getElementById('totalServed').textContent = '0 выдано';
+                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Сегодня питание не выдавалось</td></tr>';
             }
             
             loadingEl.classList.add('d-none');
@@ -84,10 +318,12 @@ async function loadTodayMeals() {
         }
     } catch (error) {
         console.error('Error loading meals:', error);
+        loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки данных</div>';
     }
 }
 
-async function serveMeal(mealId) {
+// Mark meal as served
+async function markServed(mealId) {
     try {
         const response = await Auth.apiCall('/api/cook/meals/serve', {
             method: 'POST',
@@ -95,11 +331,32 @@ async function serveMeal(mealId) {
         });
         
         if (response.ok) {
+            showToast('success', 'Успешно', 'Питание отмечено как выданное');
             loadTodayMeals();
+        } else {
+            showToast('danger', 'Ошибка', 'Не удалось отметить питание');
         }
     } catch (error) {
-        alert('Error marking meal as served');
+        console.error('Error marking meal:', error);
+        showToast('danger', 'Ошибка', 'Ошибка при обновлении статуса');
     }
+}
+
+// Show toast notification
+function showToast(type, title, message) {
+    const toastEl = document.getElementById('mealToast');
+    const toastHeader = document.getElementById('mealToastHeader');
+    const toastIcon = document.getElementById('mealToastIcon');
+    const toastTitle = document.getElementById('mealToastTitle');
+    const toastMessage = document.getElementById('mealToastMessage');
+    
+    toastHeader.className = 'toast-header bg-' + type + ' text-white';
+    toastIcon.className = 'bi me-2 ' + (type === 'success' ? 'bi-check-circle' : type === 'warning' ? 'bi-exclamation-triangle' : type === 'danger' ? 'bi-x-circle' : 'bi-info-circle');
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
 }
 </script>
 {% endblock %}

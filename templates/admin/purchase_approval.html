@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Purchase Approval - Admin Dashboard{% endblock %}
+{% block title %}Подтверждение заказов - Панель администратора{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -9,27 +9,27 @@
         <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
             <div class="sidebar-sticky pt-3">
                 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Admin Menu</span>
+                    <span>Меню администратора</span>
                 </h6>
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i>Панель
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/statistics">
-                            <i class="bi bi-graph-up me-2"></i>Statistics
+                            <i class="bi bi-graph-up me-2"></i>Статистика
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active text-white bg-primary" href="/admin/purchase-approval">
-                            <i class="bi bi-cart-check me-2"></i>Purchase Approval
+                            <i class="bi bi-cart-check me-2"></i>Заказы
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/admin/reports">
-                            <i class="bi bi-file-earmark-text me-2"></i>Reports
+                            <i class="bi bi-file-earmark-text me-2"></i>Отчёты
                         </a>
                     </li>
                 </ul>
@@ -39,13 +39,13 @@
         <!-- Main content -->
         <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Purchase Approval</h1>
+                <h1 class="h2">Подтверждение заказов</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <div class="btn-group me-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="loadRequests('all')">All</button>
-                        <button class="btn btn-sm btn-outline-warning active" onclick="loadRequests('pending')">Pending</button>
-                        <button class="btn btn-sm btn-outline-success" onclick="loadRequests('approved')">Approved</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="loadRequests('rejected')">Rejected</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadRequests('all')">Все</button>
+                        <button class="btn btn-sm btn-outline-warning active" onclick="loadRequests('pending')">Ожидают</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="loadRequests('approved')">Одобрено</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="loadRequests('rejected')">Отклонено</button>
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
             <!-- Purchase Requests Table -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Purchase Requests</h5>
+                    <h5 class="mb-0">Заказы на закупку</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -64,17 +64,17 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Creator</th>
-                                    <th>Created</th>
-                                    <th>Items</th>
-                                    <th>Total Cost</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th>Создатель</th>
+                                    <th>Дата</th>
+                                    <th>Товары</th>
+                                    <th>Сумма</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
                                 </tr>
                             </thead>
                             <tbody id="requests-table-body">
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted">Loading purchase requests...</td>
+                                    <td colspan="7" class="text-center text-muted">Загрузка заказов...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -87,7 +87,7 @@
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Purchase Request Details</h5>
+                            <h5 class="modal-title">Детали заказа</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body" id="request-details">
@@ -136,11 +136,11 @@ async function loadRequests(filter = 'all') {
             const data = await response.json();
             renderRequestsTable(data.purchase_requests);
         } else {
-            showAlert('Failed to load purchase requests', 'danger');
+            showAlert('Не удалось загрузить заказы', 'danger');
         }
     } catch (error) {
         console.error('Error loading requests:', error);
-        showAlert('Error loading purchase requests', 'danger');
+        showAlert('Ошибка загрузки заказов', 'danger');
     }
 }
 
@@ -150,7 +150,7 @@ function renderRequestsTable(requests) {
     if (requests.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center text-muted">No purchase requests found</td>
+                <td colspan="7" class="text-center text-muted">Заказы не найдены</td>
             </tr>
         `;
         return;
@@ -177,10 +177,10 @@ function renderRequestsTable(requests) {
         return `
             <tr>
                 <td>${req.id}</td>
-                <td>${req.creator_name || 'Unknown'}</td>
+                <td>${req.creator_name || 'Неизвестно'}</td>
                 <td>${new Date(req.created_at).toLocaleDateString()}</td>
-                <td>${itemCount} items</td>
-                <td>$${(req.total_cost || 0).toFixed(2)}</td>
+                <td>${itemCount} шт.</td>
+                <td>${(req.total_cost || 0).toFixed(2)} ₽</td>
                 <td>${statusBadge}</td>
                 <td>${actions}</td>
             </tr>
@@ -190,15 +190,15 @@ function renderRequestsTable(requests) {
 
 function getStatusBadge(status) {
     const badges = {
-        'pending': '<span class="badge bg-warning">Pending</span>',
-        'approved': '<span class="badge bg-success">Approved</span>',
-        'rejected': '<span class="badge bg-danger">Rejected</span>'
+        'pending': '<span class="badge bg-warning">Ожидает</span>',
+        'approved': '<span class="badge bg-success">Одобрено</span>',
+        'rejected': '<span class="badge bg-danger">Отклонено</span>'
     };
     return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
 }
 
 async function approveRequest(requestId) {
-    if (!confirm('Are you sure you want to approve this purchase request?')) return;
+    if (!confirm('Вы уверены, что хотите одобрить этот заказ?')) return;
     
     try {
         const token = localStorage.getItem('access_token');
@@ -212,19 +212,19 @@ async function approveRequest(requestId) {
         });
         
         if (response.ok) {
-            showAlert('Purchase request approved successfully', 'success');
+            showAlert('Заказ успешно одобрен', 'success');
             loadRequests(currentFilter);
         } else {
-            showAlert('Failed to approve request', 'danger');
+            showAlert('Не удалось одобрить заказ', 'danger');
         }
     } catch (error) {
         console.error('Error approving request:', error);
-        showAlert('Error approving request', 'danger');
+        showAlert('Ошибка при одобрении заказа', 'danger');
     }
 }
 
 async function rejectRequest(requestId) {
-    if (!confirm('Are you sure you want to reject this purchase request?')) return;
+    if (!confirm('Вы уверены, что хотите отклонить этот заказ?')) return;
     
     try {
         const token = localStorage.getItem('access_token');
@@ -238,14 +238,14 @@ async function rejectRequest(requestId) {
         });
         
         if (response.ok) {
-            showAlert('Purchase request rejected', 'success');
+            showAlert('Заказ отклонён', 'success');
             loadRequests(currentFilter);
         } else {
-            showAlert('Failed to reject request', 'danger');
+            showAlert('Не удалось отклонить заказ', 'danger');
         }
     } catch (error) {
         console.error('Error rejecting request:', error);
-        showAlert('Error rejecting request', 'danger');
+        showAlert('Ошибка при отклонении заказа', 'danger');
     }
 }
 

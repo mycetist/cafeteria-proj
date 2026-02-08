@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - School Cafeteria{% endblock %}
+{% block title %}Панель администратора - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
-        <p class="text-muted">Welcome, {{ current_user.full_name }}!</p>
+        <h2><i class="bi bi-speedometer2"></i> Панель администратора</h2>
+        <p class="text-muted">Добро пожаловать, {{ current_user.full_name }}!</p>
     </div>
 </div>
 
@@ -17,7 +17,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Total Users</h6>
+                        <h6 class="text-muted mb-1">Всего пользователей</h6>
                         <h4 class="mb-0" id="totalUsers">-</h4>
                     </div>
                     <div class="text-primary">
@@ -32,8 +32,8 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Today's Revenue</h6>
-                        <h4 class="mb-0" id="todayRevenue">$0.00</h4>
+                        <h6 class="text-muted mb-1">Выручка сегодня</h6>
+                        <h4 class="mb-0" id="todayRevenue">0 ₽</h4>
                     </div>
                     <div class="text-success">
                         <i class="bi bi-cash-stack fs-2"></i>
@@ -47,7 +47,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Pending Approvals</h6>
+                        <h6 class="text-muted mb-1">Ожидают подтверждения</h6>
                         <h4 class="mb-0" id="pendingApprovals">-</h4>
                     </div>
                     <div class="text-warning">
@@ -62,7 +62,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Meals Today</h6>
+                        <h6 class="text-muted mb-1">Обедов сегодня</h6>
                         <h4 class="mb-0" id="mealsToday">0</h4>
                     </div>
                     <div class="text-info">
@@ -79,23 +79,28 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-3">
                         <a href="/admin/statistics" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-graph-up"></i> View Statistics
+                            <i class="bi bi-graph-up"></i> Статистика
                         </a>
                     </div>
                     <div class="col-md-3">
                         <a href="/admin/purchase-approval" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-check2-square"></i> Approve Requests
+                            <i class="bi bi-check2-square"></i> Подтвердить заказы
                         </a>
                     </div>
                     <div class="col-md-3">
                         <a href="/admin/reports" class="btn btn-outline-success w-100">
-                            <i class="bi bi-file-earmark-text"></i> Generate Reports
+                            <i class="bi bi-file-earmark-text"></i> Отчёты
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/notifications" class="btn btn-outline-info w-100">
+                            <i class="bi bi-bell"></i> Уведомления
                         </a>
                     </div>
                 </div>
@@ -109,12 +114,12 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Revenue Overview</h5>
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Обзор выручки</h5>
             </div>
             <div class="card-body">
                 <div id="revenueLoading" class="text-center py-5">
                     <div class="spinner-border text-primary"></div>
-                    <p class="text-muted mt-2">Loading chart...</p>
+                    <p class="text-muted mt-2">Загрузка графика...</p>
                 </div>
                 <div id="revenueChart" class="d-none">
                     <canvas id="revenueCanvas" height="250"></canvas>
@@ -127,8 +132,8 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-cart"></i> Recent Requests</h5>
-                <a href="/admin/purchase-approval" class="btn btn-sm btn-primary">View All</a>
+                <h5 class="mb-0"><i class="bi bi-cart"></i> Недавние заказы</h5>
+                <a href="/admin/purchase-approval" class="btn btn-sm btn-primary">Все заказы</a>
             </div>
             <div class="card-body">
                 <div id="requestsLoading" class="text-center py-4">
@@ -138,7 +143,7 @@
                     <div class="list-group list-group-flush" id="requestsList"></div>
                 </div>
                 <div id="noRequests" class="alert alert-light text-center d-none">
-                    <i class="bi bi-inbox"></i> No pending requests
+                    <i class="bi bi-inbox"></i> Нет ожидающих заказов
                 </div>
             </div>
         </div>
@@ -163,7 +168,7 @@ async function loadDashboardStats() {
         if (response.ok) {
             const data = await response.json();
             document.getElementById('todayRevenue').textContent = 
-                '$' + (data.today_revenue || 0).toFixed(2);
+                (data.today_revenue || 0).toFixed(2) + ' ₽';
         }
         
         const requestsResponse = await Auth.apiCall('/api/admin/purchase-requests');
@@ -187,10 +192,10 @@ async function loadRevenueChart() {
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
                 datasets: [{
-                    label: 'Revenue ($)',
-                    data: [120, 150, 180, 140, 200, 90, 0],
+                    label: 'Выручка (₽)',
+                    data: [1200, 1500, 1800, 1400, 2000, 900, 0],
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     fill: true,
@@ -208,7 +213,7 @@ async function loadRevenueChart() {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value;
+                                return value + ' ₽';
                             }
                         }
                     }
@@ -220,7 +225,7 @@ async function loadRevenueChart() {
         chartEl.classList.remove('d-none');
     } catch (error) {
         console.error('Error loading chart:', error);
-        loadingEl.innerHTML = '<p class="text-muted">Chart unavailable</p>';
+        loadingEl.innerHTML = '<p class="text-muted">График недоступен</p>';
     }
 }
 
@@ -241,10 +246,10 @@ async function loadRecentRequests() {
                 requestsListEl.innerHTML = pending.map(req => `
                     <a href="/admin/purchase-approval" class="list-group-item list-group-item-action">
                         <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">Request #${req.id}</h6>
+                            <h6 class="mb-1">Заказ #${req.id}</h6>
                             <small class="text-warning">${req.status}</small>
                         </div>
-                        <p class="mb-1 small text-muted">By ${req.creator?.full_name || 'Unknown'}</p>
+                        <p class="mb-1 small text-muted">От ${req.creator?.full_name || 'Неизвестно'}</p>
                     </a>
                 `).join('');
                 

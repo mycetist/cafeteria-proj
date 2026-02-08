@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - School Cafeteria{% endblock %}
+{% block title %}Вход - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -8,7 +8,7 @@
         <div class="card shadow-sm">
             <div class="card-body p-4">
                 <h2 class="text-center mb-4">
-                    <i class="bi bi-box-arrow-in-right text-primary"></i> Login
+                    <i class="bi bi-box-arrow-in-right text-primary"></i> Вход
                 </h2>
                 
                 <div id="errorAlert" class="alert alert-danger d-none"></div>
@@ -17,19 +17,19 @@
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" name="email" required 
-                               placeholder="Enter your email">
+                               placeholder="Введите ваш email">
                     </div>
                     
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
+                        <label for="password" class="form-label">Пароль</label>
                         <input type="password" class="form-control" id="password" name="password" required 
-                               placeholder="Enter your password">
+                               placeholder="Введите ваш пароль">
                     </div>
                     
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary" id="loginBtn">
                             <span class="spinner-border spinner-border-sm d-none" id="loginSpinner"></span>
-                            Login
+                            Войти
                         </button>
                     </div>
                 </form>
@@ -37,15 +37,15 @@
                 <hr class="my-4">
                 
                 <p class="text-center mb-0">
-                    Don't have an account? <a href="/register">Register here</a>
+                    Нет аккаунта? <a href="/register">Зарегистрируйтесь</a>
                 </p>
                 
                 <div class="mt-3 p-2 bg-light rounded">
                     <small class="text-muted">
-                        <strong>Demo accounts:</strong><br>
-                        Student: student@school.com / student123<br>
-                        Cook: cook@cafeteria.com / cook123<br>
-                        Admin: admin@cafeteria.com / admin123
+                        <strong>Тестовые аккаунты:</strong><br>
+                        Ученик: student@school.com / student123<br>
+                        Повар: cook@cafeteria.com / cook123<br>
+                        Админ: admin@cafeteria.com / admin123
                     </small>
                 </div>
             </div>
@@ -106,12 +106,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = '/student/dashboard';
                 }
             } else {
-                errorAlert.textContent = data.error || 'Login failed';
+                errorAlert.textContent = data.error || 'Ошибка входа';
                 errorAlert.classList.remove('d-none');
             }
         } catch (error) {
             console.error('Login error:', error);
-            errorAlert.textContent = 'Network error. Please try again.';
+            errorAlert.textContent = 'Ошибка сети. Попробуйте снова.';
             errorAlert.classList.remove('d-none');
         } finally {
             loginBtn.disabled = false;

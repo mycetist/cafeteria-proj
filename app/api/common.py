@@ -189,7 +189,22 @@ def get_dashboard():
         recent_meals = user.meal_records.order_by(
             MealRecord.received_at.desc()
         ).limit(5).all()
-        dashboard_data['recent_meals'] = [m.to_dict() for m in recent_meals]
+        
+        # Include dish name from menu items
+        recent_meals_data = []
+        for meal in recent_meals:
+            meal_dict = meal.to_dict()
+            # Get dish name from menu items
+            menu_items = MenuItem.query.filter_by(menu_id=meal.menu_id).first()
+            if menu_items:
+                dish = Dish.query.get(menu_items.dish_id)
+                meal_dict['dish_name'] = dish.name if dish else 'Unknown'
+            else:
+                meal_dict['dish_name'] = 'Unknown'
+            meal_dict['status'] = 'Получен' if meal.is_confirmed else 'Ожидает'
+            recent_meals_data.append(meal_dict)
+        
+        dashboard_data['recent_meals'] = recent_meals_data
     
     elif user.role == 'cook':
         today = date.today()

@@ -107,6 +107,13 @@ def cook_purchase_requests():
     return render_template('cook/purchase_requests.html', current_user=g.current_user)
 
 
+@pages_bp.route('/cook/reviews')
+def cook_reviews():
+    if not g.current_user or g.current_user.role != 'cook':
+        return redirect(url_for('pages.login_page'))
+    return render_template('cook/reviews.html', current_user=g.current_user)
+
+
 @pages_bp.route('/admin/dashboard')
 def admin_dashboard():
     if not g.current_user or g.current_user.role != 'admin':
@@ -133,6 +140,13 @@ def admin_reports():
     if not g.current_user or g.current_user.role != 'admin':
         return redirect(url_for('pages.login_page'))
     return render_template('admin/reports.html', current_user=g.current_user)
+
+
+@pages_bp.route('/notifications')
+def notifications():
+    if not g.current_user:
+        return redirect(url_for('pages.login_page'))
+    return render_template('notifications.html', current_user=g.current_user)
 
 
 @pages_bp.route('/dashboard')

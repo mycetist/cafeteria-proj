@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Отзывы - Школьная столовая{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-star"></i> Отзывы учеников</h2>
+        <p class="text-muted">Просмотр отзывов о блюдах от учеников</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Все отзывы</h5>
+        <span class="badge bg-primary" id="reviewsCount">0 отзывов</span>
+    </div>
+    <div class="card-body">
+        <div id="reviewsLoading" class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="reviewsContent" class="d-none">
+            <div class="mb-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Поиск по блюду или ученику...">
+            </div>
+            <div id="reviewsList"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireRole('cook');
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadReviews();
+    
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        filterReviews(e.target.value);
+    });
+});
+
+let allReviews = [];
+
+async function loadReviews() {
+    const loadingEl = document.getElementById('reviewsLoading');
+    const contentEl = document.getElementById('reviewsContent');
+    const listEl = document.getElementById('reviewsList');
+    const countEl = document.getElementById('reviewsCount');
+    
+    try {
+        const response = await Auth.apiCall('/api/cook/reviews');
+        
+        if (response.ok) {
+            const data = await response.json();
+            allReviews = data.reviews || [];
+            
+            document.getElementById('reviewsCount').textContent = `${allReviews.length} отзывов`;
+            
+            renderReviews(allReviews);
+            
+            loadingEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+    }
+}
+
+function renderReviews(reviews) {
+    const listEl = document.getElementById('reviewsList');
+    
+    if (reviews.length === 0) {
+        listEl.innerHTML = '<p class="text-muted text-center">Отзывов пока нет</p>';
+        return;
+    }
+    
+    listEl.innerHTML = reviews.map(r => `
+        <div class="border-bottom p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>${r.dish?.name || 'Неизвестное блюдо'}</strong>
+                    <span class="text-warning ms-2">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
+            </div>
+            <p class="mb-1">${r.comment || ''}</p>
+            <small class="text-muted">
+                <i class="bi bi-person"></i> ${r.user?.full_name || 'Аноним'}
+            </small>
+        </div>
+    `).join('');
+}
+
+function filterReviews(query) {
+    const lowerQuery = query.toLowerCase();
+    const filtered = allReviews.filter(r => {
+        const dishName = r.dish?.name?.toLowerCase() || '';
+        const userName = r.user?.full_name?.toLowerCase() || '';
+        const comment = r.comment?.toLowerCase() || '';
+        return dishName.includes(lowerQuery) || userName.includes(lowerQuery) || comment.includes(lowerQuery);
+    });
+    renderReviews(filtered);
+}
+</script>
+{% endblock %}

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Cook Dashboard - School Cafeteria{% endblock %}
+{% block title %}Панель повара - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-speedometer2"></i> Cook Dashboard</h2>
-        <p class="text-muted">Welcome, {{ current_user.full_name }}!</p>
+        <h2><i class="bi bi-speedometer2"></i> Панель повара</h2>
+        <p class="text-muted">Добро пожаловать, {{ current_user.full_name }}!</p>
     </div>
 </div>
 
@@ -16,7 +16,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Meals Served Today</h6>
+                        <h6 class="text-muted mb-1">Обедов сегодня</h6>
                         <h4 class="mb-0" id="mealsServed">0</h4>
                     </div>
                     <div class="text-primary">
@@ -31,7 +31,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Low Stock Items</h6>
+                        <h6 class="text-muted mb-1">Мало на складе</h6>
                         <h4 class="mb-0" id="lowStockCount">-</h4>
                     </div>
                     <div class="text-warning">
@@ -46,7 +46,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Pending Requests</h6>
+                        <h6 class="text-muted mb-1">Ожидающие заказы</h6>
                         <h4 class="mb-0" id="pendingRequests">-</h4>
                     </div>
                     <div class="text-success">
@@ -61,7 +61,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="text-muted mb-1">Today's Menu</h6>
+                        <h6 class="text-muted mb-1">Меню на сегодня</h6>
                         <h4 class="mb-0" id="menuItems">-</h4>
                     </div>
                     <div class="text-info">
@@ -78,23 +78,28 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-3">
                         <a href="/cook/meal-tracking" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-check-circle"></i> Track Meals
+                            <i class="bi bi-check-circle"></i> Отслеживать обеды
                         </a>
                     </div>
                     <div class="col-md-3">
                         <a href="/cook/inventory" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-box-seam"></i> Check Inventory
+                            <i class="bi bi-box-seam"></i> Склад
                         </a>
                     </div>
                     <div class="col-md-3">
                         <a href="/cook/purchase-requests" class="btn btn-outline-success w-100">
-                            <i class="bi bi-cart-plus"></i> New Request
+                            <i class="bi bi-cart-plus"></i> Новый заказ
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/cook/reviews" class="btn btn-outline-info w-100">
+                            <i class="bi bi-star"></i> Отзывы
                         </a>
                     </div>
                 </div>
@@ -108,18 +113,18 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Today's Menu</h5>
+                <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Меню на сегодня</h5>
             </div>
             <div class="card-body">
                 <div id="menuLoading" class="text-center py-4">
                     <div class="spinner-border text-primary"></div>
-                    <p class="text-muted mt-2">Loading menu...</p>
+                    <p class="text-muted mt-2">Загрузка меню...</p>
                 </div>
                 <div id="menuContent" class="d-none">
                     <div class="row" id="menuItemsList"></div>
                 </div>
                 <div id="noMenu" class="alert alert-info d-none">
-                    <i class="bi bi-info-circle"></i> No menu available for today.
+                    <i class="bi bi-info-circle"></i> На сегодня меню недоступно.
                 </div>
             </div>
         </div>
@@ -129,7 +134,7 @@
     <div class="col-md-4">
         <div class="card border-warning">
             <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Alert</h5>
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Низкий запас</h5>
             </div>
             <div class="card-body">
                 <div id="inventoryLoading" class="text-center py-4">
@@ -139,7 +144,7 @@
                     <ul class="list-group list-group-flush" id="lowStockList"></ul>
                 </div>
                 <div id="noLowStock" class="alert alert-light text-center d-none">
-                    <i class="bi bi-check-circle"></i> All stock levels are good!
+                    <i class="bi bi-check-circle"></i> Все запасы в норме!
                 </div>
             </div>
         </div>

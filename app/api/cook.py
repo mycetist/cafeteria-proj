@@ -6,7 +6,7 @@ from app.extensions import db
 from app.utils.decorators import cook_required
 from app.models import (
     User, Dish, Menu, MenuItem, Inventory, Ingredient,
-    MealRecord, PurchaseRequest, PurchaseItem, Notification, Allergy
+    MealRecord, PurchaseRequest, PurchaseItem, Notification, Allergy, Review
 )
 
 
@@ -53,7 +53,7 @@ def get_today_meals():
         'menu': menu.to_dict(),
         'dishes': dishes,
         'total_served': total_served,
-        'meal_records': [mr.to_dict() for mr in meal_records]
+        'meals': [mr.to_dict() for mr in meal_records]  # renamed for template compatibility
     }), 200
 
 
@@ -65,41 +65,85 @@ def serve_meal():
     if not data:
         return jsonify({'error': 'Данные не предоставлены'}), 400
     
+    meal_id = data.get('meal_id')
     user_id = data.get('user_id')
+    meal_type = data.get('meal_type', 'lunch')
     menu_id = data.get('menu_id')
     
-    if not user_id or not menu_id:
-        return jsonify({'error': 'user_id и menu_id обязательны'}), 400
+    # If meal_id provided, mark existing record as served
+    if meal_id:
+        meal_record = MealRecord.query.get(meal_id)
+        if not meal_record:
+            return jsonify({'error': 'Запись о питании не найдена'}), 404
+        
+        if meal_record.is_confirmed:
+            return jsonify({'error': 'Питание уже выдано'}), 409
+        
+        meal_record.is_confirmed = True
+        meal_record.received_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Питание отмечено как выданное',
+            'meal_record': meal_record.to_dict()
+        }), 200
+    
+    # Otherwise, need user_id and either menu_id or meal_type
+    if not user_id:
+        return jsonify({'error': 'user_id или meal_id обязательны'}), 400
     
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 404
     
-    menu = Menu.query.get(menu_id)
-    if not menu:
-        return jsonify({'error': 'Меню не найдено'}), 404
+    # Find or create menu for today
+    today = date.today()
+    if not menu_id:
+        menu = Menu.query.filter_by(
+            menu_date=today,
+            meal_type=meal_type,
+            is_active=True
+        ).first()
+        if not menu:
+            # Create a basic menu if none exists
+            menu = Menu(
+                menu_date=today,
+                meal_type=meal_type,
+                is_active=True
+            )
+            db.session.add(menu)
+            db.session.flush()
+        menu_id = menu.id
+    else:
+        menu = Menu.query.get(menu_id)
+        if not menu:
+            return jsonify({'error': 'Меню не найдено'}), 404
+        meal_type = menu.meal_type
     
-    existing = MealRecord.query.filter_by(
-        user_id=user_id,
-        menu_id=menu_id
+    # Check for existing record today
+    existing = MealRecord.query.filter(
+        MealRecord.user_id == user_id,
+        MealRecord.meal_type == meal_type,
+        db.func.date(MealRecord.received_at) == today
     ).first()
     
+    if existing and existing.is_confirmed:
+        return jsonify({'error': 'Питание уже выдано этому пользователю сегодня'}), 409
+    
     if existing:
-        if existing.is_confirmed:
-            return jsonify({'error': 'Обед уже выдан этому пользователю'}), 409
         existing.is_confirmed = True
         existing.received_at = datetime.utcnow()
         db.session.commit()
         
         return jsonify({
-            'message': 'Обед успешно выдан',
+            'message': 'Питание успешно выдано',
             'meal_record': existing.to_dict()
         }), 200
     
     meal_record = MealRecord(
         user_id=user_id,
         menu_id=menu_id,
-        meal_type=menu.meal_type,
+        meal_type=meal_type,
         is_confirmed=True,
         received_at=datetime.utcnow()
     )
@@ -108,7 +152,7 @@ def serve_meal():
     db.session.commit()
     
     return jsonify({
-        'message': 'Обед успешно выдан',
+        'message': 'Питание успешно выдано',
         'meal_record': meal_record.to_dict()
     }), 201
 
@@ -158,9 +202,12 @@ def get_inventory():
         ingredient = Ingredient.query.get(item.ingredient_id)
         if ingredient:
             item_data = item.to_dict()
-            item_data['ingredient_name'] = ingredient.name
-            item_data['unit'] = ingredient.unit
-            item_data['min_stock_level'] = float(ingredient.min_stock_level)
+            # Include nested ingredient data for template compatibility
+            item_data['ingredient'] = {
+                'name': ingredient.name,
+                'unit': ingredient.unit,
+                'min_stock_level': float(ingredient.min_stock_level)
+            }
             item_data['is_low_stock'] = item.is_low_stock()
             
             if item.is_low_stock():
@@ -436,3 +483,27 @@ def get_dashboard_stats():
     ).count()
     
     return jsonify(stats), 200
+
+
+@cook_bp.route('/reviews', methods=['GET'])
+@cook_required
+def get_all_reviews():
+    """Get all reviews for all dishes - for cook to view feedback"""
+    reviews = Review.query.order_by(Review.created_at.desc()).all()
+    reviews_data = []
+    
+    for review in reviews:
+        review_dict = review.to_dict()
+        dish = Dish.query.get(review.dish_id)
+        if dish:
+            review_dict['dish'] = dish.to_dict()
+        user = User.query.get(review.user_id)
+        if user:
+            review_dict['user'] = {
+                'id': user.id,
+                'full_name': user.full_name,
+                'email': user.email
+            }
+        reviews_data.append(review_dict)
+    
+    return jsonify({'reviews': reviews_data}), 200

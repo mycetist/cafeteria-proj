@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Purchase Requests - School Cafeteria{% endblock %}
+{% block title %}Заявки на закупку - Школьная столовая{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-cart-plus"></i> Purchase Requests</h2>
-        <p class="text-muted">Create and track purchase requests</p>
+        <h2><i class="bi bi-cart-plus"></i> Заявки на закупку</h2>
+        <p class="text-muted">Создание и отслеживание заявок на закупку</p>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">New Request</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Новая заявка</h5>
             </div>
             <div class="card-body">
                 <form id="requestForm">
@@ -23,11 +23,11 @@
                             <div class="row">
                                 <div class="col-6">
                                     <select class="form-select ingredient-select" required>
-                                        <option value="">Select ingredient...</option>
+                                        <option value="">Выберите ингредиент...</option>
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <input type="number" class="form-control quantity-input" placeholder="Qty" min="1" required>
+                                    <input type="number" class="form-control quantity-input" placeholder="Кол-во" min="1" step="0.1" required>
                                 </div>
                                 <div class="col-2">
                                     <button type="button" class="btn btn-outline-danger" onclick="removeItem(this)" disabled>
@@ -38,9 +38,11 @@
                         </div>
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addItem()">
-                        <i class="bi bi-plus"></i> Add Item
+                        <i class="bi bi-plus"></i> Добавить позицию
                     </button>
-                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send"></i> Отправить заявку
+                    </button>
                 </form>
             </div>
         </div>
@@ -49,15 +51,28 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">My Requests</h5>
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Мои заявки</h5>
             </div>
             <div class="card-body">
                 <div id="requestsLoading" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm"></div>
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                    <span class="ms-2">Загрузка...</span>
                 </div>
                 <div id="requestsList"></div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="requestToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="requestToastHeader">
+            <i class="bi bi-info-circle me-2" id="requestToastIcon"></i>
+            <strong class="me-auto" id="requestToastTitle">Уведомление</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+        <div class="toast-body" id="requestToastMessage"></div>
     </div>
 </div>
 {% endblock %}
@@ -85,6 +100,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        if (items.length === 0) {
+            showToast('warning', 'Внимание', 'Добавьте хотя бы одну позицию');
+            return;
+        }
+        
         try {
             const response = await Auth.apiCall('/api/cook/purchase-requests', {
                 method: 'POST',
@@ -93,11 +113,37 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 document.getElementById('requestForm').reset();
+                // Reset items container to single item
+                const container = document.getElementById('itemsContainer');
+                container.innerHTML = `
+                    <div class="item-row mb-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <select class="form-select ingredient-select" required>
+                                    <option value="">Выберите ингредиент...</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control quantity-input" placeholder="Кол-во" min="1" step="0.1" required>
+                            </div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-outline-danger" onclick="removeItem(this)" disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                loadIngredients();
                 loadMyRequests();
-                alert('Request submitted!');
+                showToast('success', 'Успешно', 'Заявка успешно отправлена!');
+            } else {
+                const data = await response.json();
+                showToast('danger', 'Ошибка', data.error || 'Не удалось отправить заявку');
             }
         } catch (error) {
-            alert('Error submitting request');
+            console.error('Error submitting request:', error);
+            showToast('danger', 'Ошибка', 'Ошибка при отправке заявки');
         }
     });
 });
@@ -112,7 +158,7 @@ async function loadIngredients() {
             ).join('');
             
             document.querySelectorAll('.ingredient-select').forEach(select => {
-                select.innerHTML = '<option value="">Select ingredient...</option>' + options;
+                select.innerHTML = '<option value="">Выберите ингредиент...</option>' + options;
             });
         }
     } catch (error) {
@@ -132,23 +178,28 @@ async function loadMyRequests() {
             
             if (data.requests && data.requests.length > 0) {
                 listEl.innerHTML = data.requests.map(r => `
-                    <div class="border-bottom p-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>Request #${r.id}</strong>
-                            <span class="badge bg-${r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}">${r.status}</span>
+                    <div class="border rounded p-3 mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>Заявка #${r.id}</strong>
+                                <small class="text-muted d-block">${new Date(r.created_at).toLocaleDateString('ru-RU')}</small>
+                            </div>
+                            <span class="badge bg-${r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}">
+                                ${r.status === 'approved' ? 'Одобрено' : r.status === 'rejected' ? 'Отклонено' : 'Ожидает'}
+                            </span>
                         </div>
-                        <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
-                        <p class="mb-0 small">${r.items?.length || 0} items</p>
+                        <p class="mb-0 mt-2 small text-muted">${r.items?.length || 0} позиций</p>
                     </div>
                 `).join('');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center">No requests yet</p>';
+                listEl.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Заявок пока нет</p>';
             }
             
             loadingEl.classList.add('d-none');
         }
     } catch (error) {
-        listEl.innerHTML = '<p class="text-danger text-center">Error loading requests</p>';
+        console.error('Error loading requests:', error);
+        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки заявок</p>';
         loadingEl.classList.add('d-none');
     }
 }
@@ -164,6 +215,22 @@ function addItem() {
 
 function removeItem(btn) {
     btn.closest('.item-row').remove();
+}
+
+function showToast(type, title, message) {
+    const toastEl = document.getElementById('requestToast');
+    const toastHeader = document.getElementById('requestToastHeader');
+    const toastIcon = document.getElementById('requestToastIcon');
+    const toastTitle = document.getElementById('requestToastTitle');
+    const toastMessage = document.getElementById('requestToastMessage');
+    
+    toastHeader.className = 'toast-header bg-' + type + ' text-white';
+    toastIcon.className = 'bi me-2 ' + (type === 'success' ? 'bi-check-circle' : type === 'warning' ? 'bi-exclamation-triangle' : type === 'danger' ? 'bi-x-circle' : 'bi-info-circle');
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
 }
 </script>
 {% endblock %}

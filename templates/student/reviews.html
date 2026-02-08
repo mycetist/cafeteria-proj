@@ -1,12 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Reviews - School Cafeteria{% endblock %}
+{% block title %}Отзывы - Школьная столовая{% endblock %}
 
 {% block content %}
+<!-- Toast container for notifications -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                <span id="toastMessage">Операция успешна!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <span id="errorToastMessage">Произошла ошибка!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4">
     <div class="col">
-        <h2><i class="bi bi-star"></i> My Reviews</h2>
-        <p class="text-muted">Rate dishes and share your feedback</p>
+        <h2><i class="bi bi-star"></i> Мои отзывы</h2>
+        <p class="text-muted">Оцените блюда и поделитесь своим мнением</p>
     </div>
 </div>
 
@@ -14,31 +36,32 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Write a Review</h5>
+                <h5 class="mb-0">Написать отзыв</h5>
             </div>
             <div class="card-body">
                 <form id="reviewForm">
                     <div class="mb-3">
-                        <label class="form-label">Select Dish</label>
+                        <label class="form-label">Выберите блюдо</label>
                         <select class="form-select" id="dishSelect" required>
-                            <option value="">Choose a dish...</option>
+                            <option value="">Выберите блюдо...</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Rating</label>
+                        <label class="form-label">Оценка</label>
                         <select class="form-select" id="rating" required>
-                            <option value="5">5 - Excellent</option>
-                            <option value="4">4 - Good</option>
-                            <option value="3">3 - Average</option>
-                            <option value="2">2 - Poor</option>
-                            <option value="1">1 - Terrible</option>
+                            <option value="5">5 - Отлично</option>
+                            <option value="4">4 - Хорошо</option>
+                            <option value="3">3 - Средне</option>
+                            <option value="2">2 - Плохо</option>
+                            <option value="1">1 - Ужасно</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Comment</label>
-                        <textarea class="form-control" id="comment" rows="3" placeholder="Share your experience..."></textarea>
+                        <label class="form-label">Комментарий</label>
+                        <textarea class="form-control" id="comment" rows="3" placeholder="Поделитесь своим опытом..."></textarea>
+                        <div class="form-text">Комментарий обязателен</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                    <button type="submit" class="btn btn-primary">Отправить отзыв</button>
                 </form>
             </div>
         </div>
@@ -47,7 +70,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">My Past Reviews</h5>
+                <h5 class="mb-0">Мои прошлые отзывы</h5>
             </div>
             <div class="card-body">
                 <div id="reviewsLoading" class="text-center py-3">
@@ -66,8 +89,23 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDishes();
     loadReviews();
     
+    // Helper function to show toast notifications
+    function showToast(message, isError = false) {
+        const toastId = isError ? 'errorToast' : 'successToast';
+        const messageId = isError ? 'errorToastMessage' : 'toastMessage';
+        document.getElementById(messageId).textContent = message;
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+    }
+    
     document.getElementById('reviewForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        const comment = document.getElementById('comment').value.trim();
+        if (!comment) {
+            showToast('Пожалуйста, напишите комментарий', true);
+            return;
+        }
         
         try {
             const response = await Auth.apiCall('/api/reviews', {
@@ -75,17 +113,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     dish_id: parseInt(document.getElementById('dishSelect').value),
                     rating: parseInt(document.getElementById('rating').value),
-                    comment: document.getElementById('comment').value
+                    comment: comment
                 })
             });
+            
+            const data = await response.json();
             
             if (response.ok) {
                 document.getElementById('reviewForm').reset();
                 loadReviews();
-                alert('Review submitted!');
+                loadDishes(); // Reload to update dish list
+                showToast('Отзыв отправлен!');
+            } else {
+                showToast(data.error || 'Ошибка при отправке отзыва', true);
             }
         } catch (error) {
-            alert('Error submitting review');
+            showToast('Ошибка при отправке отзыва', true);
         }
     });
 });
@@ -98,24 +141,25 @@ async function loadDishes() {
         
         if (response.ok) {
             const data = await response.json();
-            // Get unique dishes from menu
+            // Получаем уникальные блюда из меню
             const dishes = [];
             const seen = new Set();
             
-            data.menus?.forEach(menu => {
-                menu.items?.forEach(item => {
-                    if (!seen.has(item.dish.id)) {
+            // API возвращает data.menu (единственное число), не data.menus
+            if (data.menu && data.menu.items) {
+                data.menu.items.forEach(item => {
+                    if (item.dish && !seen.has(item.dish.id)) {
                         seen.add(item.dish.id);
                         dishes.push(item.dish);
                     }
                 });
-            });
+            }
             
-            select.innerHTML = '<option value="">Choose a dish...</option>' +
+            select.innerHTML = '<option value="">Выберите блюдо...</option>' +
                 dishes.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
         }
     } catch (error) {
-        console.error('Error loading dishes:', error);
+        console.error('Ошибка загрузки блюд:', error);
     }
 }
 
@@ -131,23 +175,48 @@ async function loadReviews() {
             
             if (data.reviews && data.reviews.length > 0) {
                 listEl.innerHTML = data.reviews.map(r => `
-                    <div class="border-bottom p-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>${r.dish?.name || 'Unknown Dish'}</strong>
-                            <span class="text-warning">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                    <div class="border-bottom p-2" id="review-${r.id}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${r.dish?.name || 'Неизвестное блюдо'}</strong>
+                                <span class="text-warning ms-2">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReview(${r.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                         <p class="mb-0 small text-muted">${r.comment || ''}</p>
+                        <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
                     </div>
                 `).join('');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center">No reviews yet</p>';
+                listEl.innerHTML = '<p class="text-muted text-center">Отзывов пока нет</p>';
             }
             
             loadingEl.classList.add('d-none');
         }
     } catch (error) {
-        listEl.innerHTML = '<p class="text-danger text-center">Error loading reviews</p>';
+        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки отзывов</p>';
         loadingEl.classList.add('d-none');
+    }
+}
+
+async function deleteReview(reviewId) {
+    try {
+        const response = await Auth.apiCall(`/api/reviews/${reviewId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadReviews();
+            loadDishes(); // Reload to update dish list
+            showToast('Отзыв удалён');
+        } else {
+            const data = await response.json();
+            showToast(data.error || 'Ошибка при удалении отзыва', true);
+        }
+    } catch (error) {
+        showToast('Ошибка при удалении отзыва', true);
     }
 }
 </script>

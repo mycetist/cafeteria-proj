@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Уведомления - Школьная столовая{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-bell"></i> Уведомления</h2>
+        <p class="text-muted">Все ваши уведомления</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Список уведомлений</h5>
+        <button class="btn btn-sm btn-outline-primary" onclick="markAllRead()">
+            <i class="bi bi-check-all"></i> Отметить все как прочитанные
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="notificationsLoading" class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+            <p class="text-muted mt-2">Загрузка уведомлений...</p>
+        </div>
+        <div id="notificationsContent" class="d-none">
+            <ul class="list-group list-group-flush" id="notificationsList"></ul>
+        </div>
+        <div id="noNotifications" class="alert alert-info text-center d-none">
+            <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+            У вас нет уведомлений
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="notifToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="notifToastHeader">
+            <i class="bi bi-info-circle me-2" id="notifToastIcon"></i>
+            <strong class="me-auto" id="notifToastTitle">Уведомление</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+        <div class="toast-body" id="notifToastMessage"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllNotifications();
+});
+
+async function loadAllNotifications() {
+    const loadingEl = document.getElementById('notificationsLoading');
+    const contentEl = document.getElementById('notificationsContent');
+    const noNotifEl = document.getElementById('noNotifications');
+    const listEl = document.getElementById('notificationsList');
+    
+    try {
+        const response = await Auth.apiCall('/api/notifications');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.notifications && data.notifications.length > 0) {
+                listEl.innerHTML = data.notifications.map(n => `
+                    <li class="list-group-item ${!n.is_read ? 'bg-light' : ''}" id="notif-${n.id}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="bi ${n.is_read ? 'bi-envelope-open text-muted' : 'bi-envelope text-primary'} me-2"></i>
+                                    <strong>${n.title}</strong>
+                                    ${!n.is_read ? '<span class="badge bg-primary ms-2">Новое</span>' : ''}
+                                </div>
+                                <p class="mb-1">${n.message}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> ${formatNotificationTime(n.created_at)}
+                                </small>
+                            </div>
+                            <div class="ms-3">
+                                ${!n.is_read ? `
+                                    <button class="btn btn-sm btn-outline-primary" onclick="markSingleRead(${n.id})">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </li>
+                `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+            } else {
+                loadingEl.classList.add('d-none');
+                noNotifEl.classList.remove('d-none');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки уведомлений</div>';
+    }
+}
+
+async function markSingleRead(notificationId) {
+    try {
+        const response = await Auth.apiCall(`/api/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+        
+        if (response.ok) {
+            const notifEl = document.getElementById(`notif-${notificationId}`);
+            notifEl.classList.remove('bg-light');
+            notifEl.querySelector('.badge')?.remove();
+            notifEl.querySelector('button')?.remove();
+            notifEl.querySelector('.bi-envelope')?.classList.replace('bi-envelope', 'bi-envelope-open');
+            notifEl.querySelector('.bi-envelope-open')?.classList.replace('text-primary', 'text-muted');
+        }
+    } catch (error) {
+        console.error('Error marking notification:', error);
+    }
+}
+
+async function markAllRead() {
+    try {
+        const response = await Auth.apiCall('/api/notifications/read-all', {
+            method: 'PUT'
+        });
+        
+        if (response.ok) {
+            showToast('success', 'Успешно', 'Все уведомления отмечены как прочитанные');
+            loadAllNotifications();
+        }
+    } catch (error) {
+        console.error('Error marking all notifications:', error);
+        showToast('danger', 'Ошибка', 'Не удалось отметить уведомления');
+    }
+}
+
+function formatNotificationTime(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU') + ' в ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function showToast(type, title, message) {
+    const toastEl = document.getElementById('notifToast');
+    const toastHeader = document.getElementById('notifToastHeader');
+    const toastIcon = document.getElementById('notifToastIcon');
+    const toastTitle = document.getElementById('notifToastTitle');
+    const toastMessage = document.getElementById('notifToastMessage');
+    
+    toastHeader.className = 'toast-header bg-' + type + ' text-white';
+    toastIcon.className = 'bi me-2 ' + (type === 'success' ? 'bi-check-circle' : 'bi-x-circle');
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+</script>
+{% endblock %}
