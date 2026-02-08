@@ -133,3 +133,16 @@ def admin_reports():
     if not g.current_user or g.current_user.role != 'admin':
         return redirect(url_for('pages.login_page'))
     return render_template('admin/reports.html', current_user=g.current_user)
+
+
+@pages_bp.route('/dashboard')
+def dashboard():
+    """Generic dashboard route that redirects based on user role"""
+    if not g.current_user:
+        return redirect(url_for('pages.login_page'))
+    if g.current_user.role == 'admin':
+        return redirect(url_for('pages.admin_dashboard'))
+    elif g.current_user.role == 'cook':
+        return redirect(url_for('pages.cook_dashboard'))
+    else:
+        return redirect(url_for('pages.student_dashboard'))
