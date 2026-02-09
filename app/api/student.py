@@ -174,6 +174,11 @@ def create_subscription():
     if subscription_type not in ['weekly', 'monthly']:
         return jsonify({'error': 'Тип абонемента должен быть weekly или monthly'}), 400
     
+    # Get user to check balance
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
     today = date.today()
     if subscription_type == 'weekly':
         days_to_add = 7
@@ -183,6 +188,16 @@ def create_subscription():
         days_to_add = 30
         amount = 2500.00
         meals_to_add = 20
+    
+    # Check if user has sufficient balance
+    current_balance = float(user.balance) if user.balance else 0.00
+    if current_balance < amount:
+        return jsonify({
+            'error': 'Недостаточно средств на балансе',
+            'required': amount,
+            'current_balance': current_balance,
+            'shortage': amount - current_balance
+        }), 402  # Payment Required
     
     existing = Subscription.query.filter_by(user_id=user_id, is_active=True).first()
     
@@ -207,6 +222,10 @@ def create_subscription():
         db.session.add(subscription)
         message = f'Ваш {subscription_type} абонемент активен до {end_date}.'
     
+    # Deduct balance from user wallet
+    if not user.deduct_balance(amount):
+        return jsonify({'error': 'Ошибка при списании средств'}), 500
+    
     payment = Payment(
         user_id=user_id,
         amount=amount,
@@ -220,7 +239,7 @@ def create_subscription():
     notification = Notification(
         user_id=user_id,
         title='Абонемент активирован',
-        message=message
+        message=f'{message} Списано с кошелька: {amount:.2f} ₽. Текущий баланс: {float(user.balance):.2f} ₽'
     )
     db.session.add(notification)
     db.session.commit()
@@ -228,7 +247,8 @@ def create_subscription():
     return jsonify({
         'message': 'Абонемент успешно создан',
         'subscription': subscription.to_dict(),
-        'payment': payment.to_dict()
+        'payment': payment.to_dict(),
+        'remaining_balance': float(user.balance)
     }), 201
 
 
