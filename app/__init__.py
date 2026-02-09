@@ -42,23 +42,53 @@ def register_blueprints(app):
 
 
 def register_error_handlers(app):
-    from flask import jsonify
-    from werkzeug.exceptions import HTTPException
+    from flask import jsonify, render_template, request
+    from werkzeug.exceptions import HTTPException, NotFound, Forbidden, InternalServerError
+    
+    @app.errorhandler(404)
+    def handle_404(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Не найдено', 'message': 'Запрашиваемый ресурс не найден', 'status_code': 404}), 404
+        return render_template('404.html'), 404
+    
+    @app.errorhandler(403)
+    def handle_403(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Доступ запрещен', 'message': 'У вас нет прав для доступа к этому ресурсу', 'status_code': 403}), 403
+        return render_template('403.html'), 403
+    
+    @app.errorhandler(500)
+    def handle_500(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Внутренняя ошибка', 'message': 'Произошла внутренняя ошибка сервера', 'status_code': 500}), 500
+        return render_template('500.html'), 500
     
     @app.errorhandler(HTTPException)
     def handle_http_exception(e):
-        response = {
-            'error': e.name,
-            'message': e.description,
-            'status_code': e.code
-        }
-        return jsonify(response), e.code
+        if request.path.startswith('/api/'):
+            response = {
+                'error': e.name,
+                'message': e.description,
+                'status_code': e.code
+            }
+            return jsonify(response), e.code
+        # For non-API requests, try to show appropriate error page
+        if e.code == 404:
+            return render_template('404.html'), 404
+        elif e.code == 403:
+            return render_template('403.html'), 403
+        elif e.code >= 500:
+            return render_template('500.html'), e.code
+        return render_template('500.html'), 500
     
     @app.errorhandler(Exception)
     def handle_exception(e):
-        response = {
-            'error': 'Internal Server Error',
-            'message': str(e) if app.config['DEBUG'] else 'An unexpected error occurred',
-            'status_code': 500
-        }
-        return jsonify(response), 500
+        app.logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+        if request.path.startswith('/api/'):
+            response = {
+                'error': 'Internal Server Error',
+                'message': str(e) if app.config['DEBUG'] else 'An unexpected error occurred',
+                'status_code': 500
+            }
+            return jsonify(response), 500
+        return render_template('500.html'), 500
