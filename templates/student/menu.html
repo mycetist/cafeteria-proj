@@ -43,35 +43,22 @@
 </div>
 
 <!-- Menu Content -->
-<div class="content-card">
-    <div class="content-card-header">
-        <div class="d-flex align-items-center">
-            <div class="header-icon">
-                <i class="bi bi-egg-fried"></i>
-            </div>
-            <h5 class="mb-0">Блюда на день</h5>
+<div class="menu-content-wrapper">
+    <div id="menuLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
         </div>
-        <span class="badge bg-light text-dark border" id="menuDateBadge">
-            <i class="bi bi-calendar3 me-1"></i> --
-        </span>
+        <p class="text-muted mt-2 mb-0">Загрузка меню...</p>
     </div>
-    <div class="content-card-body">
-        <div id="menuLoading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
-            <p class="text-muted mt-2 mb-0">Загрузка меню...</p>
+    <div id="menuContent" class="d-none">
+        <div class="menu-cards-grid" id="menuCards"></div>
+    </div>
+    <div id="noMenu" class="empty-state d-none">
+        <div class="empty-state-icon">
+            <i class="bi bi-calendar-x"></i>
         </div>
-        <div id="menuContent" class="d-none">
-            <div class="menu-category-section" id="menuCategories"></div>
-        </div>
-        <div id="noMenu" class="empty-state d-none">
-            <div class="empty-state-icon">
-                <i class="bi bi-calendar-x"></i>
-            </div>
-            <p class="empty-state-text">На эту дату меню недоступно</p>
-            <p class="text-muted small mt-2">Попробуйте выбрать другую дату</p>
-        </div>
+        <p class="empty-state-text">На эту дату меню недоступно</p>
+        <p class="text-muted small mt-2">Попробуйте выбрать другую дату</p>
     </div>
 </div>
 {% endblock %}
@@ -138,7 +125,6 @@ function formatDate(date) {
 
 function updateDateDisplay() {
     const dateTextEl = document.getElementById('dateText');
-    const dateBadgeEl = document.getElementById('menuDateBadge');
     const dateInput = document.getElementById('menuDate');
     
     const today = new Date();
@@ -163,14 +149,7 @@ function updateDateDisplay() {
         });
     }
     
-    const shortDate = currentDate.toLocaleDateString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-    });
-    
     dateTextEl.textContent = displayText;
-    dateBadgeEl.innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${shortDate}`;
     dateInput.value = formatDate(currentDate);
 }
 
@@ -178,7 +157,7 @@ async function loadMenu(date) {
     const loadingEl = document.getElementById('menuLoading');
     const contentEl = document.getElementById('menuContent');
     const noMenuEl = document.getElementById('noMenu');
-    const categoriesEl = document.getElementById('menuCategories');
+    const cardsEl = document.getElementById('menuCards');
     
     loadingEl.classList.remove('d-none');
     contentEl.classList.add('d-none');
@@ -191,44 +170,18 @@ async function loadMenu(date) {
             const data = await response.json();
             
             if (data.menu && data.menu.items && data.menu.items.length > 0) {
-                // Group items by category
-                const categories = {};
-                data.menu.items.forEach(item => {
-                    const category = item.dish.category || 'Другое';
-                    if (!categories[category]) {
-                        categories[category] = [];
-                    }
-                    categories[category].push(item);
-                });
-                
-                // Render categories
-                categoriesEl.innerHTML = Object.entries(categories).map(([category, items]) => {
-                    const categoryIcon = getCategoryIcon(category);
-                    const categoryRu = translateCategory(category);
-                    return `
-                        <div class="menu-category">
-                            <div class="menu-category-header">
-                                <h6 class="mb-0">
-                                    <i class="${categoryIcon} me-2"></i>${categoryRu}
-                                </h6>
-                                <span class="category-count">${items.length} ${getItemsWord(items.length)}</span>
-                            </div>
-                            <div class="menu-cards-grid">
-                                ${items.map(item => `
-                                    <div class="menu-dish-card">
-                                        <div class="menu-dish-content">
-                                            <div class="menu-dish-name">${item.dish.name}</div>
-                                            ${item.dish.description ? `<div class="menu-dish-description">${item.dish.description}</div>` : ''}
-                                        </div>
-                                        <div class="menu-dish-footer">
-                                            <div class="menu-dish-price">${item.dish.price} ₽</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                // Render all items in a single grid
+                cardsEl.innerHTML = data.menu.items.map(item => `
+                    <div class="menu-dish-card">
+                        <div class="menu-dish-content">
+                            <div class="menu-dish-name">${item.dish.name}</div>
+                            ${item.dish.description ? `<div class="menu-dish-description">${item.dish.description}</div>` : ''}
                         </div>
-                    `;
-                }).join('');
+                        <div class="menu-dish-footer">
+                            <div class="menu-dish-price">${item.dish.price} ₽</div>
+                        </div>
+                    </div>
+                `).join('');
                 
                 loadingEl.classList.add('d-none');
                 contentEl.classList.remove('d-none');
@@ -246,56 +199,5 @@ async function loadMenu(date) {
     }
 }
 
-function getItemsWord(count) {
-    const lastTwo = count % 100;
-    const lastOne = count % 10;
-    
-    if (lastTwo >= 11 && lastTwo <= 19) {
-        return 'блюд';
-    }
-    if (lastOne === 1) {
-        return 'блюдо';
-    }
-    if (lastOne >= 2 && lastOne <= 4) {
-        return 'блюда';
-    }
-    return 'блюд';
-}
-
-function translateCategory(category) {
-    const translations = {
-        'SALAD': 'Салаты',
-        'SOUP': 'Супы',
-        'MAIN': 'Горячее',
-        'SIDE': 'Гарниры',
-        'DRINK': 'Напитки',
-        'DESSERT': 'Десерты',
-        'BREAKFAST': 'Завтраки',
-        'SNACK': 'Закуски',
-        'FRUIT': 'Фрукты',
-        'BAKERY': 'Выпечка',
-        'OTHER': 'Другое',
-        'Другое': 'Другое'
-    };
-    return translations[category] || category;
-}
-
-function getCategoryIcon(category) {
-    const icons = {
-        'SALAD': 'bi bi-egg-fried',
-        'SOUP': 'bi bi-cup-hot',
-        'MAIN': 'bi bi-fire',
-        'SIDE': 'bi bi-egg',
-        'DRINK': 'bi bi-cup-straw',
-        'DESSERT': 'bi bi-cake2',
-        'BREAKFAST': 'bi bi-sun',
-        'SNACK': 'bi bi-cookie',
-        'FRUIT': 'bi bi-apple',
-        'BAKERY': 'bi bi-basket2',
-        'OTHER': 'bi bi-three-dots',
-        'Другое': 'bi bi-three-dots'
-    };
-    return icons[category] || 'bi bi-fork-knife';
-}
 </script>
 {% endblock %}

@@ -266,12 +266,16 @@ main {
 .meal-confirm-card {
     border-radius: 12px;
     padding: 1.5rem;
-    color: #fff;
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #e9ecef;
     transition: all 0.3s ease;
 }
 
 .meal-confirm-active {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #e9ecef;
 }
 
 .meal-confirm-success {
@@ -295,21 +299,28 @@ main {
 .meal-confirm-icon {
     width: 56px;
     height: 56px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(13, 110, 253, 0.1);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.75rem;
+    color: #0d6efd;
 }
 
 .meal-confirm-title {
     font-weight: 600;
-    color: #fff;
+    color: #212529;
 }
 
 .meal-confirm-status {
-    color: rgba(255, 255, 255, 0.9);
+    color: #495057;
+}
+
+/* Override text colors for white background */
+.meal-confirm-active .meal-confirm-title,
+.meal-confirm-active .meal-confirm-status {
+    color: #212529;
 }
 
 .meal-confirm-card .btn-light {
@@ -859,8 +870,8 @@ main {
 .menu-dish-price {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
     color: #fff;
-    padding: 0.375rem 0.875rem;
-    border-radius: 20px;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
     font-weight: 600;
     font-size: 0.9375rem;
     display: inline-block;
