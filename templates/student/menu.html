@@ -250,12 +250,17 @@ async function loadWallet() {
     
     try {
         const response = await Auth.apiCall('/api/wallet');
+        console.log('Wallet API response status:', response.status);
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Wallet data:', data);
             const balance = data.wallet ? data.wallet.balance : 0;
             balanceEl.textContent = balance.toFixed(2) + ' ₽';
         } else {
+            console.error('Wallet API failed with status:', response.status);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
             balanceEl.textContent = '0 ₽';
         }
     } catch (error) {

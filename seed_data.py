@@ -125,6 +125,50 @@ def create_ingredients():
 
 def create_dishes():
     dishes_data = [
+        # Завтраки
+        {
+            'name': 'Овсяная каша',
+            'description': 'Полезная овсяная каша на молоке с медом',
+            'price': 60.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/oatmeal.jpg'
+        },
+        {
+            'name': 'Омлет с сыром',
+            'description': 'Воздушный омлет с сыром и зеленью',
+            'price': 75.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/omelette.jpg'
+        },
+        {
+            'name': 'Сырники',
+            'description': 'Творожные сырники со сметаной и вареньем',
+            'price': 80.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/syrniki.jpg'
+        },
+        {
+            'name': 'Блины с маслом',
+            'description': 'Горячие блины с сливочным маслом',
+            'price': 70.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/pancakes.jpg'
+        },
+        {
+            'name': 'Бутерброд с сыром',
+            'description': 'Свежий бутерброд с сыром и маслом',
+            'price': 50.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/sandwich.jpg'
+        },
+        {
+            'name': 'Йогурт с мюсли',
+            'description': 'Натуральный йогурт с мюсли и фруктами',
+            'price': 65.00,
+            'category': 'Завтраки',
+            'image_url': '/static/images/yogurt.jpg'
+        },
+        # Горячее
         {
             'name': 'Курица с рисом',
             'description': 'Куриная грудка на гриле с отварным рисом и овощами',
@@ -153,6 +197,7 @@ def create_dishes():
             'category': 'Горячее',
             'image_url': '/static/images/carbonara.jpg'
         },
+        # Супы
         {
             'name': 'Овощной суп',
             'description': 'Свежий овощной суп с хлебом',
@@ -167,6 +212,7 @@ def create_dishes():
             'category': 'Супы',
             'image_url': '/static/images/chicken_soup.jpg'
         },
+        # Салаты
         {
             'name': 'Свежий салат',
             'description': 'Овощной салат с помидорами и огурцами',
@@ -181,6 +227,7 @@ def create_dishes():
             'category': 'Салаты',
             'image_url': '/static/images/cabbage_salad.jpg'
         },
+        # Десерты
         {
             'name': 'Яблочный пирог',
             'description': 'Сладкий яблочный пирог с корицей',
@@ -195,6 +242,7 @@ def create_dishes():
             'category': 'Десерты',
             'image_url': '/static/images/fruit_cup.jpg'
         },
+        # Напитки
         {
             'name': 'Молоко',
             'description': 'Свежее молоко 250мл',
@@ -258,6 +306,43 @@ def create_weekly_menu():
             db.session.add(item)
 
 
+def create_breakfast_menu():
+    """Create breakfast menus for the week"""
+    today = date.today()
+    
+    breakfasts = Dish.query.filter_by(category='Завтраки').all()
+    drinks = Dish.query.filter_by(category='Напитки').all()
+    
+    if not breakfasts:
+        return
+    
+    for i in range(5):
+        menu_date = today + timedelta(days=i)
+        
+        existing = Menu.query.filter_by(menu_date=menu_date, meal_type='breakfast').first()
+        if existing:
+            continue
+        
+        menu = Menu(
+            menu_date=menu_date,
+            meal_type='breakfast',
+            is_active=True
+        )
+        db.session.add(menu)
+        db.session.flush()
+        
+        # Add 2-3 breakfast items per day
+        menu_items = [
+            MenuItem(menu_id=menu.id, dish_id=breakfasts[i % len(breakfasts)].id),
+            MenuItem(menu_id=menu.id, dish_id=breakfasts[(i + 1) % len(breakfasts)].id),
+        ]
+        if drinks:
+            menu_items.append(MenuItem(menu_id=menu.id, dish_id=drinks[i % len(drinks)].id))
+        
+        for item in menu_items:
+            db.session.add(item)
+
+
 def seed_all():
     app = create_app()
     
@@ -270,6 +355,7 @@ def seed_all():
         create_dishes()
         db.session.commit()
         
+        create_breakfast_menu()
         create_weekly_menu()
         db.session.commit()
 
