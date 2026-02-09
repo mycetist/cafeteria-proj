@@ -102,84 +102,84 @@ def create_dishes():
             'name': 'Курица с рисом',
             'description': 'Куриная грудка на гриле с отварным рисом и овощами',
             'price': 150.00,
-            'category': 'main',
+            'category': 'Горячее',
             'image_url': '/static/images/chicken_rice.jpg'
         },
         {
             'name': 'Говяжье рагу',
             'description': 'Сытное говяжье рагу с картофелем и морковью',
             'price': 180.00,
-            'category': 'main',
+            'category': 'Горячее',
             'image_url': '/static/images/beef_stew.jpg'
         },
         {
             'name': 'Рыба с картофелем фри',
             'description': 'Хрустящее филе рыбы с картофелем фри',
             'price': 160.00,
-            'category': 'main',
+            'category': 'Горячее',
             'image_url': '/static/images/fish_chips.jpg'
         },
         {
             'name': 'Паста Карбонара',
             'description': 'Сливочная паста с сыром и яйцом',
             'price': 140.00,
-            'category': 'main',
+            'category': 'Горячее',
             'image_url': '/static/images/carbonara.jpg'
         },
         {
             'name': 'Овощной суп',
             'description': 'Свежий овощной суп с хлебом',
             'price': 80.00,
-            'category': 'soup',
+            'category': 'Супы',
             'image_url': '/static/images/veg_soup.jpg'
         },
         {
             'name': 'Куриный суп',
             'description': 'Горячий куриный суп с лапшой',
             'price': 90.00,
-            'category': 'soup',
+            'category': 'Супы',
             'image_url': '/static/images/chicken_soup.jpg'
         },
         {
             'name': 'Свежий салат',
             'description': 'Овощной салат с помидорами и огурцами',
             'price': 60.00,
-            'category': 'salad',
+            'category': 'Салаты',
             'image_url': '/static/images/salad.jpg'
         },
         {
             'name': 'Салат из капусты',
             'description': 'Хрустящий салат из капусты с морковью',
             'price': 50.00,
-            'category': 'salad',
+            'category': 'Салаты',
             'image_url': '/static/images/cabbage_salad.jpg'
         },
         {
             'name': 'Яблочный пирог',
             'description': 'Сладкий яблочный пирог с корицей',
             'price': 70.00,
-            'category': 'dessert',
+            'category': 'Десерты',
             'image_url': '/static/images/apple_pie.jpg'
         },
         {
             'name': 'Фруктовый салат',
             'description': 'Свежие сезонные фрукты',
             'price': 65.00,
-            'category': 'dessert',
+            'category': 'Десерты',
             'image_url': '/static/images/fruit_cup.jpg'
         },
         {
             'name': 'Молоко',
             'description': 'Свежее молоко 250мл',
             'price': 40.00,
-            'category': 'drink',
+            'category': 'Напитки',
             'image_url': '/static/images/milk.jpg'
         },
         {
             'name': 'Фруктовый сок',
             'description': 'Свежевыжатый апельсиновый сок 250мл',
             'price': 55.00,
-            'category': 'drink',
+            'category': 'Напитки',
             'image_url': '/static/images/juice.jpg'
         },
     ]
@@ -194,11 +194,11 @@ def create_dishes():
 def create_weekly_menu():
     today = date.today()
     
-    soups = Dish.query.filter_by(category='soup').all()
-    mains = Dish.query.filter_by(category='main').all()
-    salads = Dish.query.filter_by(category='salad').all()
-    desserts = Dish.query.filter_by(category='dessert').all()
-    drinks = Dish.query.filter_by(category='drink').all()
+    soups = Dish.query.filter_by(category='Супы').all()
+    mains = Dish.query.filter_by(category='Горячее').all()
+    salads = Dish.query.filter_by(category='Салаты').all()
+    desserts = Dish.query.filter_by(category='Десерты').all()
+    drinks = Dish.query.filter_by(category='Напитки').all()
     
     if not all([soups, mains, salads, desserts]):
         return

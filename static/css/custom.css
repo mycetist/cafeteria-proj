@@ -266,16 +266,12 @@ main {
 .meal-confirm-card {
     border-radius: 12px;
     padding: 1.5rem;
-    background: #ffffff;
-    color: #212529;
-    border: 1px solid #e9ecef;
+    color: #fff;
     transition: all 0.3s ease;
 }
 
 .meal-confirm-active {
-    background: #ffffff;
-    color: #212529;
-    border: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
 }
 
 .meal-confirm-success {
@@ -299,28 +295,21 @@ main {
 .meal-confirm-icon {
     width: 56px;
     height: 56px;
-    background: rgba(13, 110, 253, 0.1);
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.75rem;
-    color: #0d6efd;
 }
 
 .meal-confirm-title {
     font-weight: 600;
-    color: #212529;
+    color: #fff;
 }
 
 .meal-confirm-status {
-    color: #495057;
-}
-
-/* Override text colors for white background */
-.meal-confirm-active .meal-confirm-title,
-.meal-confirm-active .meal-confirm-status {
-    color: #212529;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .meal-confirm-card .btn-light {
@@ -826,16 +815,9 @@ main {
     background: #fff;
     border-radius: 12px;
     border: 1px solid #e9ecef;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.2s ease;
-}
-
-.menu-dish-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
 }
 
 .menu-dish-content {
