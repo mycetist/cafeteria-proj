@@ -40,7 +40,7 @@ services:
           sleep 3
         done &&
         echo 'MySQL is up! Initializing...' &&
-        python -c 'from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()' &&
+        python -c 'from app import create_app, db; app = create_app(); app.app_context().push(); db.drop_all(); db.create_all()' &&
         python seed_data.py || echo 'Seed failed or done' &&
         python run.py --host=0.0.0.0 --port=5000
       "
