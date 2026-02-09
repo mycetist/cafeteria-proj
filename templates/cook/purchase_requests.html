@@ -3,62 +3,89 @@
 {% block title %}Заявки на закупку - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-cart-plus"></i> Заявки на закупку</h2>
-        <p class="text-muted">Создание и отслеживание заявок на закупку</p>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-cart-plus text-primary"></i> Заявки на закупку
+            </h2>
+            <p class="text-muted mb-0">Создание и отслеживание заявок на закупку ингредиентов</p>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Новая заявка</h5>
+<div class="row g-4">
+    <!-- New Request Form -->
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon">
+                        <i class="bi bi-plus-circle"></i>
+                    </div>
+                    <h5 class="mb-0">Новая заявка</h5>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="content-card-body">
                 <form id="requestForm">
-                    <div id="itemsContainer">
-                        <div class="item-row mb-3">
-                            <div class="row">
-                                <div class="col-6">
-                                    <select class="form-select ingredient-select" required>
+                    <div id="itemsContainer" class="mb-3">
+                        <div class="item-row mb-2">
+                            <div class="row g-2">
+                                <div class="col-7">
+                                    <select class="form-select form-select-sm ingredient-select" required>
                                         <option value="">Выберите ингредиент...</option>
                                     </select>
                                 </div>
-                                <div class="col-4">
-                                    <input type="number" class="form-control quantity-input" placeholder="Кол-во" min="1" step="0.1" required>
+                                <div class="col-3">
+                                    <input type="number" class="form-control form-control-sm quantity-input" placeholder="Кол-во" min="0.1" step="0.1" required>
                                 </div>
                                 <div class="col-2">
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeItem(this)" disabled>
+                                    <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeItem(this)" disabled>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addItem()">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItem()">
                         <i class="bi bi-plus"></i> Добавить позицию
                     </button>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-send"></i> Отправить заявку
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-send me-1"></i> Отправить заявку
                     </button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Мои заявки</h5>
-            </div>
-            <div class="card-body">
-                <div id="requestsLoading" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm text-primary"></div>
-                    <span class="ms-2">Загрузка...</span>
+    <!-- My Requests List -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-secondary">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h5 class="mb-0">Мои заявки</h5>
                 </div>
-                <div id="requestsList"></div>
+            </div>
+            <div class="content-card-body p-0">
+                <div id="requestsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Загрузка заявок...</p>
+                </div>
+                <div id="requestsContent" class="d-none">
+                    <div class="request-list" id="requestsList"></div>
+                </div>
+                <div id="noRequests" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <p class="empty-state-text">Заявок пока нет</p>
+                </div>
             </div>
         </div>
     </div>
@@ -116,18 +143,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset items container to single item
                 const container = document.getElementById('itemsContainer');
                 container.innerHTML = `
-                    <div class="item-row mb-3">
-                        <div class="row">
-                            <div class="col-6">
-                                <select class="form-select ingredient-select" required>
+                    <div class="item-row mb-2">
+                        <div class="row g-2">
+                            <div class="col-7">
+                                <select class="form-select form-select-sm ingredient-select" required>
                                     <option value="">Выберите ингредиент...</option>
                                 </select>
                             </div>
-                            <div class="col-4">
-                                <input type="number" class="form-control quantity-input" placeholder="Кол-во" min="1" step="0.1" required>
+                            <div class="col-3">
+                                <input type="number" class="form-control form-control-sm quantity-input" placeholder="Кол-во" min="0.1" step="0.1" required>
                             </div>
                             <div class="col-2">
-                                <button type="button" class="btn btn-outline-danger" onclick="removeItem(this)" disabled>
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeItem(this)" disabled>
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -168,6 +195,8 @@ async function loadIngredients() {
 
 async function loadMyRequests() {
     const loadingEl = document.getElementById('requestsLoading');
+    const contentEl = document.getElementById('requestsContent');
+    const noRequestsEl = document.getElementById('noRequests');
     const listEl = document.getElementById('requestsList');
     
     try {
@@ -178,29 +207,31 @@ async function loadMyRequests() {
             
             if (data.requests && data.requests.length > 0) {
                 listEl.innerHTML = data.requests.map(r => `
-                    <div class="border rounded p-3 mb-2">
+                    <div class="request-item">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <strong>Заявка #${r.id}</strong>
-                                <small class="text-muted d-block">${new Date(r.created_at).toLocaleDateString('ru-RU')}</small>
+                                <div class="request-id">Заявка #${r.id}</div>
+                                <small class="text-muted">${new Date(r.created_at).toLocaleDateString('ru-RU')}</small>
                             </div>
-                            <span class="badge bg-${r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}">
+                            <span class="badge bg-${r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}" style="font-size: 0.75rem;">
                                 ${r.status === 'approved' ? 'Одобрено' : r.status === 'rejected' ? 'Отклонено' : 'Ожидает'}
                             </span>
                         </div>
-                        <p class="mb-0 mt-2 small text-muted">${r.items?.length || 0} позиций</p>
+                        <div class="request-items">${r.items?.length || 0} позиций</div>
                     </div>
                 `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Заявок пока нет</p>';
+                loadingEl.classList.add('d-none');
+                noRequestsEl.classList.remove('d-none');
             }
-            
-            loadingEl.classList.add('d-none');
         }
     } catch (error) {
         console.error('Error loading requests:', error);
-        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки заявок</p>';
         loadingEl.classList.add('d-none');
+        noRequestsEl.classList.remove('d-none');
     }
 }
 
@@ -211,6 +242,10 @@ function addItem() {
     newRow.querySelector('.quantity-input').value = '';
     newRow.querySelector('button').disabled = false;
     container.appendChild(newRow);
+    
+    // Copy options to new select
+    const options = container.querySelector('.ingredient-select').innerHTML;
+    newRow.querySelector('.ingredient-select').innerHTML = options;
 }
 
 function removeItem(btn) {
@@ -233,4 +268,38 @@ function showToast(type, title, message) {
     toast.show();
 }
 </script>
+
+<style>
+.request-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.request-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.request-item:last-child {
+    border-bottom: none;
+}
+
+.request-id {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9375rem;
+}
+
+.request-items {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.item-row {
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+</style>
 {% endblock %}

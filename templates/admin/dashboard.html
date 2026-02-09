@@ -3,72 +3,66 @@
 {% block title %}Панель администратора - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-speedometer2"></i> Панель администратора</h2>
-        <p class="text-muted">Добро пожаловать, {{ current_user.full_name }}!</p>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-speedometer2 text-primary"></i> Панель администратора
+            </h2>
+            <p class="text-muted mb-0">Добро пожаловать, <strong>{{ current_user.full_name }}</strong>!</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <span class="badge bg-light text-dark border" id="currentDate">
+                <i class="bi bi-calendar3 me-1"></i> --.--.----
+            </span>
+        </div>
     </div>
 </div>
 
-<!-- Quick Stats -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Всего пользователей</h6>
-                        <h4 class="mb-0" id="totalUsers">-</h4>
-                    </div>
-                    <div class="text-primary">
-                        <i class="bi bi-people fs-2"></i>
-                    </div>
-                </div>
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Всего пользователей</div>
+                <div class="stat-value" id="totalUsers">-</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card success dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Выручка сегодня</h6>
-                        <h4 class="mb-0" id="todayRevenue">0 ₽</h4>
-                    </div>
-                    <div class="text-success">
-                        <i class="bi bi-cash-stack fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Выручка сегодня</div>
+                <div class="stat-value" id="todayRevenue">0 ₽</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card warning dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Ожидают подтверждения</h6>
-                        <h4 class="mb-0" id="pendingApprovals">-</h4>
-                    </div>
-                    <div class="text-warning">
-                        <i class="bi bi-hourglass-split fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Ожидают подтверждения</div>
+                <div class="stat-value" id="pendingApprovals">-</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Обедов сегодня</h6>
-                        <h4 class="mb-0" id="mealsToday">0</h4>
-                    </div>
-                    <div class="text-info">
-                        <i class="bi bi-utensils fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="bi bi-egg-fried"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Обедов сегодня</div>
+                <div class="stat-value" id="mealsToday">0</div>
             </div>
         </div>
     </div>
@@ -77,49 +71,55 @@
 <!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <a href="/admin/statistics" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-graph-up"></i> Статистика
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/admin/purchase-approval" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-check2-square"></i> Подтвердить заказы
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/admin/reports" class="btn btn-outline-success w-100">
-                            <i class="bi bi-file-earmark-text"></i> Отчёты
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/notifications" class="btn btn-outline-info w-100">
-                            <i class="bi bi-bell"></i> Уведомления
-                        </a>
-                    </div>
+        <h5 class="section-title mb-3">Быстрые действия</h5>
+        <div class="quick-actions-grid">
+            <a href="/admin/statistics" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-graph-up"></i>
                 </div>
-            </div>
+                <div class="quick-action-label">Статистика</div>
+            </a>
+            <a href="/admin/purchase-approval" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-check2-square"></i>
+                </div>
+                <div class="quick-action-label">Подтвердить заказы</div>
+            </a>
+            <a href="/admin/reports" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="quick-action-label">Отчёты</div>
+            </a>
+            <a href="/notifications" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div class="quick-action-label">Уведомления</div>
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Charts Section -->
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Обзор выручки</h5>
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Revenue Overview -->
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h5 class="mb-0">Обзор выручки</h5>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="content-card-body">
                 <div id="revenueLoading" class="text-center py-5">
-                    <div class="spinner-border text-primary"></div>
-                    <p class="text-muted mt-2">Загрузка графика...</p>
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Загрузка графика...</p>
                 </div>
                 <div id="revenueChart" class="d-none">
                     <canvas id="revenueCanvas" height="250"></canvas>
@@ -129,21 +129,33 @@
     </div>
     
     <!-- Recent Purchase Requests -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-cart"></i> Недавние заказы</h5>
-                <a href="/admin/purchase-approval" class="btn btn-sm btn-primary">Все заказы</a>
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-warning">
+                        <i class="bi bi-cart"></i>
+                    </div>
+                    <h5 class="mb-0">Недавние заказы</h5>
+                </div>
+                <a href="/admin/purchase-approval" class="btn btn-primary btn-sm">
+                    Все заказы <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
-            <div class="card-body">
-                <div id="requestsLoading" class="text-center py-4">
-                    <div class="spinner-border text-primary"></div>
+            <div class="content-card-body p-0">
+                <div id="requestsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
                 </div>
                 <div id="requestsContent" class="d-none">
-                    <div class="list-group list-group-flush" id="requestsList"></div>
+                    <ul class="activity-list" id="requestsList"></ul>
                 </div>
-                <div id="noRequests" class="alert alert-light text-center d-none">
-                    <i class="bi bi-inbox"></i> Нет ожидающих заказов
+                <div id="noRequests" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <p class="empty-state-text">Нет ожидающих заказов</p>
                 </div>
             </div>
         </div>
@@ -157,6 +169,11 @@
 requireRole('admin');
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Set current date
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('currentDate').innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${dateStr}`;
+    
     loadDashboardStats();
     loadRevenueChart();
     loadRecentRequests();
@@ -164,18 +181,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadDashboardStats() {
     try {
-        const response = await Auth.apiCall('/api/admin/statistics/payments');
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById('todayRevenue').textContent = 
-                (data.today_revenue || 0).toFixed(2) + ' ₽';
+        // Load users count and meals today from dashboard endpoint
+        const dashResponse = await Auth.apiCall('/api/admin/statistics/dashboard');
+        if (dashResponse.ok) {
+            const dashData = await dashResponse.json();
+            document.getElementById('totalUsers').textContent = (dashData.users?.total_students || 0) + (dashData.users?.total_cooks || 0);
+            document.getElementById('mealsToday').textContent = dashData.today?.meals_served || 0;
         }
-        
-        const requestsResponse = await Auth.apiCall('/api/admin/purchase-requests');
+
+        // Load today's revenue from payments endpoint
+        const paymentsResponse = await Auth.apiCall('/api/admin/statistics/payments?days=1');
+        if (paymentsResponse.ok) {
+            const paymentsData = await paymentsResponse.json();
+            // Get today's revenue from daily_revenue array (first element is today)
+            const todayRevenue = paymentsData.daily_revenue && paymentsData.daily_revenue.length > 0
+                ? paymentsData.daily_revenue[0].revenue
+                : 0;
+            document.getElementById('todayRevenue').textContent =
+                todayRevenue.toFixed(2) + ' ₽';
+        }
+
+        // Load pending approvals from purchase requests endpoint
+        const requestsResponse = await Auth.apiCall('/api/admin/purchase-requests?status=pending');
         if (requestsResponse.ok) {
             const requestsData = await requestsResponse.json();
-            const pending = requestsData.requests.filter(r => r.status === 'pending');
-            document.getElementById('pendingApprovals').textContent = pending.length;
+            document.getElementById('pendingApprovals').textContent =
+                requestsData.purchase_requests?.length || 0;
         }
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -187,15 +218,26 @@ async function loadRevenueChart() {
     const chartEl = document.getElementById('revenueChart');
     
     try {
+        // Fetch real revenue data for the last 7 days
+        const response = await Auth.apiCall('/api/admin/statistics/payments?days=7');
+        
+        if (!response.ok) throw new Error('Failed to fetch revenue data');
+        
+        const data = await response.json();
+        const dailyRevenue = data.daily_revenue || [];
+        
         const ctx = document.getElementById('revenueCanvas').getContext('2d');
         
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                labels: dailyRevenue.map(d => {
+                    const date = new Date(d.date);
+                    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+                }),
                 datasets: [{
                     label: 'Выручка (₽)',
-                    data: [1200, 1500, 1800, 1400, 2000, 900, 0],
+                    data: dailyRevenue.map(d => d.revenue),
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     fill: true,
@@ -236,22 +278,32 @@ async function loadRecentRequests() {
     const requestsListEl = document.getElementById('requestsList');
     
     try {
-        const response = await Auth.apiCall('/api/admin/purchase-requests');
+        const response = await Auth.apiCall('/api/admin/purchase-requests?status=pending');
         
         if (response.ok) {
             const data = await response.json();
-            const pending = data.requests.filter(r => r.status === 'pending').slice(0, 5);
+            const pending = (data.purchase_requests || []).slice(0, 5);
             
             if (pending.length > 0) {
-                requestsListEl.innerHTML = pending.map(req => `
-                    <a href="/admin/purchase-approval" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">Заказ #${req.id}</h6>
-                            <small class="text-warning">${req.status}</small>
-                        </div>
-                        <p class="mb-1 small text-muted">От ${req.creator?.full_name || 'Неизвестно'}</p>
-                    </a>
-                `).join('');
+                requestsListEl.innerHTML = pending.map(req => {
+                    const createdDate = new Date(req.created_at);
+                    const formattedDate = createdDate.toLocaleDateString('ru-RU', { 
+                        day: '2-digit', 
+                        month: '2-digit' 
+                    });
+                    
+                    return `
+                        <li class="activity-item">
+                            <div class="activity-icon warning">
+                                <i class="bi bi-cart"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Заказ #${req.id}</div>
+                                <div class="activity-time">От ${req.creator_name || 'Неизвестно'} • ${formattedDate}</div>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
                 
                 loadingEl.classList.add('d-none');
                 contentEl.classList.remove('d-none');

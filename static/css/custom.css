@@ -82,6 +82,19 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+/* Notification count badge - smaller size to prevent overflow */
+#notificationCount {
+    font-size: 0.65em;
+    padding: 0.3em 0.45em;
+    transform: translate(-60%, 20%) !important;
+    min-width: 1.4em;
+    height: 1.6em;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .toast-container .badge {
     background-color: #0d6efd !important;
     color: white !important;
@@ -423,6 +436,11 @@ main {
     color: #6c757d;
 }
 
+.header-icon-warning {
+    background: rgba(255, 193, 7, 0.15);
+    color: #b38f00;
+}
+
 .content-card-header h5 {
     font-weight: 600;
     color: #2c3e50;
@@ -477,6 +495,47 @@ main {
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.9375rem;
+    white-space: nowrap;
+}
+
+/* Menu Item Card - Static (no hover effects, matches student dashboard) */
+.menu-item-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.625rem 0.875rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid #e9ecef;
+    /* No hover effects - static content only */
+}
+
+.menu-item-card .menu-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.menu-item-card .menu-item-name {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9375rem;
+    margin-bottom: 0.125rem;
+}
+
+.menu-item-card .menu-item-type {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.menu-item-card .menu-item-price {
+    background: #0d6efd;
+    color: #fff;
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8125rem;
     white-space: nowrap;
 }
 
@@ -677,11 +736,46 @@ main {
    MENU PAGE - MODERN REDESIGN
    ============================================ */
 
+/* Meal Type Selector - Compact */
+.meal-type-selector {
+    display: inline-flex;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.meal-type-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+}
+
+.meal-type-btn:hover {
+    color: #495057;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.btn-check:checked + .meal-type-btn {
+    background: #fff;
+    color: #0d6efd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* Date Selector Card */
 .date-selector-card {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
     border-radius: 10px;
-    padding: 0.875rem 1.25rem;
+    padding: 0.625rem 1rem;
     color: #fff;
 }
 
@@ -700,13 +794,13 @@ main {
 }
 
 .date-nav-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     color: #fff;
-    font-size: 1rem;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
@@ -725,10 +819,10 @@ main {
 .date-display {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 6px;
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.875rem;
     font-weight: 600;
-    font-size: 0.9375rem;
-    min-width: 160px;
+    font-size: 0.875rem;
+    min-width: 140px;
     text-align: center;
     text-transform: capitalize;
 }
@@ -744,12 +838,15 @@ main {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
-    padding: 0.375rem 0.75rem;
+    padding: 0.375rem 0.625rem;
     color: #fff;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .date-quick-btn:hover {
@@ -807,7 +904,7 @@ main {
 /* Menu Dish Cards - Card-based Design */
 .menu-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
 }
 
@@ -847,6 +944,48 @@ main {
     padding: 0.75rem 1rem;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.menu-dish-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-reviews {
+    background: #6c757d;
+    border: 1px solid #6c757d;
+    color: #fff;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-reviews:hover {
+    background: #5c636a;
+    border-color: #5c636a;
+    color: #fff;
+}
+
+.btn-buy {
+    background: #0d6efd;
+    border: 1px solid #0d6efd;
+    color: #fff;
+    padding: 0.375rem 0.875rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-buy:hover {
+    background: #0b5ed7;
+    border-color: #0b5ed7;
 }
 
 .menu-dish-price {
@@ -857,6 +996,8 @@ main {
     font-weight: 600;
     font-size: 0.9375rem;
     display: inline-block;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* Static Menu Item Cards - No Interactive Animations (fallback) */
@@ -900,6 +1041,114 @@ main {
     white-space: nowrap;
 }
 
+/* ============================================
+   PAYMENT PAGE - MODERN STYLES
+   ============================================ */
+
+/* Quick Amount Buttons */
+.quick-amount-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.quick-amount-buttons .btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Subscription Options */
+.subscription-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.subscription-option {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.subscription-option:hover {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.02);
+}
+
+.subscription-option:has(input:checked) {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.05);
+}
+
+.subscription-option .form-check-input {
+    margin-top: 0.5rem;
+}
+
+.subscription-option .form-check-label {
+    cursor: pointer;
+    padding-left: 0.5rem;
+}
+
+.subscription-detail {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Header icon variants */
+.header-icon-success {
+    background: rgba(25, 135, 84, 0.1) !important;
+    color: #198754 !important;
+}
+
+/* ============================================
+   REVIEWS PAGE - MODERN STYLES
+   ============================================ */
+
+/* Rating Selector */
+.rating-selector .btn-group {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rating-selector .btn {
+    border: 1px solid #ffc107;
+    color: #b38f00;
+    font-weight: 600;
+}
+
+.rating-selector .btn-check:checked + .btn {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.rating-selector .btn:hover {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.rating-labels {
+    font-size: 0.75rem;
+}
+
+/* Alert with icon */
+.alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Activity icon variants */
+.activity-icon.danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
 /* Responsive Adjustments for Menu Page */
 @media (max-width: 768px) {
     .date-selector-content {
@@ -918,7 +1167,7 @@ main {
     }
     
     .menu-cards-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 0.75rem;
     }
     
@@ -932,6 +1181,20 @@ main {
     
     .menu-dish-footer {
         padding: 0.5rem 0.75rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .menu-dish-actions {
+        gap: 0.375rem;
+        justify-content: flex-end;
+    }
+    
+    .btn-reviews,
+    .btn-buy {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
     }
     
     .menu-dish-price {

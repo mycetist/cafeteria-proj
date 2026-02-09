@@ -3,71 +3,66 @@
 {% block title %}Панель повара - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-speedometer2"></i> Панель повара</h2>
-        <p class="text-muted">Добро пожаловать, {{ current_user.full_name }}!</p>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-speedometer2 text-primary"></i> Панель повара
+            </h2>
+            <p class="text-muted mb-0">Добро пожаловать, <strong>{{ current_user.full_name }}</strong>!</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <span class="badge bg-light text-dark border" id="currentDate">
+                <i class="bi bi-calendar3 me-1"></i> --.--.----
+            </span>
+        </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Обедов сегодня</h6>
-                        <h4 class="mb-0" id="mealsServed">0</h4>
-                    </div>
-                    <div class="text-primary">
-                        <i class="bi bi-utensils fs-2"></i>
-                    </div>
-                </div>
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="bi bi-egg-fried"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Обедов сегодня</div>
+                <div class="stat-value" id="mealsServed">0</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card warning dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Мало на складе</h6>
-                        <h4 class="mb-0" id="lowStockCount">-</h4>
-                    </div>
-                    <div class="text-warning">
-                        <i class="bi bi-exclamation-triangle fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Мало на складе</div>
+                <div class="stat-value" id="lowStockCount">-</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card success dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Ожидающие заказы</h6>
-                        <h4 class="mb-0" id="pendingRequests">-</h4>
-                    </div>
-                    <div class="text-success">
-                        <i class="bi bi-cart fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="bi bi-cart"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Ожидающие заказы</div>
+                <div class="stat-value" id="pendingRequests">-</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card dashboard-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1">Меню на сегодня</h6>
-                        <h4 class="mb-0" id="menuItems">-</h4>
-                    </div>
-                    <div class="text-info">
-                        <i class="bi bi-menu-button fs-2"></i>
-                    </div>
-                </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="bi bi-menu-button"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Меню на сегодня</div>
+                <div class="stat-value" id="menuItems">-</div>
             </div>
         </div>
     </div>
@@ -76,75 +71,100 @@
 <!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <a href="/cook/meal-tracking" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-check-circle"></i> Отслеживать обеды
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/cook/inventory" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-box-seam"></i> Склад
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/cook/purchase-requests" class="btn btn-outline-success w-100">
-                            <i class="bi bi-cart-plus"></i> Новый заказ
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/cook/reviews" class="btn btn-outline-info w-100">
-                            <i class="bi bi-star"></i> Отзывы
-                        </a>
-                    </div>
+        <h5 class="section-title mb-3">Быстрые действия</h5>
+        <div class="quick-actions-grid">
+            <a href="/cook/meal-tracking" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-check-circle"></i>
                 </div>
-            </div>
+                <div class="quick-action-label">Отслеживать обеды</div>
+            </a>
+            <a href="/cook/inventory" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div class="quick-action-label">Склад</div>
+            </a>
+            <a href="/cook/purchase-requests" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-cart-plus"></i>
+                </div>
+                <div class="quick-action-label">Новый заказ</div>
+            </a>
+            <a href="/cook/reviews" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div class="quick-action-label">Отзывы</div>
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Today's Menu & Inventory Alert -->
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Меню на сегодня</h5>
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Today's Menu -->
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon">
+                        <i class="bi bi-calendar-day"></i>
+                    </div>
+                    <h5 class="mb-0">Меню на сегодня</h5>
+                </div>
+                <a href="/cook/meal-tracking" class="btn btn-primary btn-sm">
+                    Отслеживание <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
-            <div class="card-body">
-                <div id="menuLoading" class="text-center py-4">
-                    <div class="spinner-border text-primary"></div>
-                    <p class="text-muted mt-2">Загрузка меню...</p>
+            <div class="content-card-body">
+                <div id="menuLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Загрузка меню...</p>
                 </div>
                 <div id="menuContent" class="d-none">
-                    <div class="row" id="menuItemsList"></div>
+                    <div class="menu-items-grid" id="menuItemsList"></div>
                 </div>
-                <div id="noMenu" class="alert alert-info d-none">
-                    <i class="bi bi-info-circle"></i> На сегодня меню недоступно.
+                <div id="noMenu" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-calendar-x"></i>
+                    </div>
+                    <p class="empty-state-text">На сегодня меню недоступно</p>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Low Stock Alert -->
-    <div class="col-md-4">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Низкий запас</h5>
+    <div class="col-lg-4">
+        <div class="content-card border-warning">
+            <div class="content-card-header bg-warning-subtle">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h5 class="mb-0">Низкий запас</h5>
+                </div>
+                <a href="/cook/inventory" class="btn btn-warning btn-sm">
+                    Склад <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
-            <div class="card-body">
-                <div id="inventoryLoading" class="text-center py-4">
-                    <div class="spinner-border text-warning"></div>
+            <div class="content-card-body p-0">
+                <div id="inventoryLoading" class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
                 </div>
                 <div id="inventoryContent" class="d-none">
                     <ul class="list-group list-group-flush" id="lowStockList"></ul>
                 </div>
-                <div id="noLowStock" class="alert alert-light text-center d-none">
-                    <i class="bi bi-check-circle"></i> Все запасы в норме!
+                <div id="noLowStock" class="empty-state d-none">
+                    <div class="empty-state-icon text-success">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <p class="empty-state-text">Все запасы в норме!</p>
                 </div>
             </div>
         </div>
@@ -157,15 +177,29 @@
 requireRole('cook');
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Set current date
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('currentDate').innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${dateStr}`;
+    
     loadDashboardStats();
     loadTodayMenu();
     loadLowStockItems();
 });
 
 async function loadDashboardStats() {
-    // Placeholder - will be implemented with proper endpoints
-    document.getElementById('mealsServed').textContent = '0';
-    document.getElementById('pendingRequests').textContent = '0';
+    try {
+        const response = await Auth.apiCall('/api/cook/dashboard-stats');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('mealsServed').textContent = data.meals_served_today || '0';
+            document.getElementById('pendingRequests').textContent = data.pending_purchase_requests || '0';
+        }
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        document.getElementById('mealsServed').textContent = '0';
+        document.getElementById('pendingRequests').textContent = '0';
+    }
 }
 
 async function loadTodayMenu() {
@@ -175,31 +209,28 @@ async function loadTodayMenu() {
     const menuItemsEl = document.getElementById('menuItemsList');
     
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const response = await Auth.apiCall(`/api/menu/${today}`);
+        const response = await Auth.apiCall('/api/cook/meals/today');
         
         if (response.ok) {
             const data = await response.json();
             
-            if (data.menu && data.menu.items && data.menu.items.length > 0) {
-                document.getElementById('menuItems').textContent = data.menu.items.length;
+            if (data.dishes && data.dishes.length > 0) {
+                document.getElementById('menuItems').textContent = data.dishes.length + ' блюд';
                 
-                menuItemsEl.innerHTML = data.menu.items.map(item => `
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h6 class="card-title">${item.dish.name}</h6>
-                                <p class="card-text small text-muted">${item.dish.description || ''}</p>
-                                <span class="badge bg-secondary">${item.dish.category}</span>
-                            </div>
+                menuItemsEl.innerHTML = data.dishes.map(dish => `
+                    <div class="menu-item-card">
+                        <div class="menu-item-info">
+                            <div class="menu-item-name">${dish.name}</div>
+                            <div class="menu-item-type">${dish.category}</div>
                         </div>
+                        <div class="menu-item-price">${dish.price} &#8381;</div>
                     </div>
                 `).join('');
                 
                 loadingEl.classList.add('d-none');
                 contentEl.classList.remove('d-none');
             } else {
-                document.getElementById('menuItems').textContent = '0';
+                document.getElementById('menuItems').textContent = 'Нет меню';
                 loadingEl.classList.add('d-none');
                 noMenuEl.classList.remove('d-none');
             }
@@ -232,8 +263,16 @@ async function loadLowStockItems() {
             
             if (lowStock.length > 0) {
                 lowStockListEl.innerHTML = lowStock.map(item => `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        ${item.ingredient.name}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-warning">
+                                <i class="bi bi-box-seam fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">${item.ingredient.name}</div>
+                                <small class="text-muted">Мин. запас: ${item.ingredient.min_stock_level} ${item.ingredient.unit}</small>
+                            </div>
+                        </div>
                         <span class="badge bg-danger rounded-pill">
                             ${item.quantity} ${item.ingredient.unit}
                         </span>

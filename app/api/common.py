@@ -3,7 +3,7 @@ from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.api import common_bp
 from app.extensions import db
-from app.models import User, Dish, Menu, MenuItem, Review, MealRecord, Subscription, Inventory
+from app.models import User, Dish, Menu, MenuItem, Review, MealRecord, Subscription, Inventory, Notification
 
 
 @common_bp.route('/profile', methods=['GET'])
@@ -241,3 +241,65 @@ def get_dashboard():
         ).count()
     
     return jsonify(dashboard_data), 200
+
+
+# ============ NOTIFICATION ENDPOINTS (Available to all authenticated users) ============
+
+@common_bp.route('/notifications', methods=['GET'])
+@jwt_required()
+def get_notifications():
+    """Get notifications for the current user - available to all authenticated users"""
+    user_id = get_jwt_identity()
+    
+    unread = Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).order_by(Notification.created_at.desc()).all()
+    
+    read = Notification.query.filter_by(
+        user_id=user_id,
+        is_read=True
+    ).order_by(Notification.created_at.desc()).limit(20 - len(unread)).all()
+    
+    notifications = unread + read
+    
+    return jsonify({
+        'notifications': [n.to_dict() for n in notifications],
+        'unread_count': len(unread)
+    }), 200
+
+
+@common_bp.route('/notifications/<int:notification_id>/read', methods=['PUT', 'POST'])
+@jwt_required()
+def mark_notification_read(notification_id):
+    """Mark a notification as read - available to all authenticated users"""
+    user_id = get_jwt_identity()
+    
+    notification = Notification.query.filter_by(
+        id=notification_id,
+        user_id=user_id
+    ).first()
+    
+    if not notification:
+        return jsonify({'error': 'Уведомление не найдено'}), 404
+    
+    notification.mark_as_read()
+    db.session.commit()
+    
+    return jsonify({'message': 'Уведомление отмечено как прочитанное'}), 200
+
+
+@common_bp.route('/notifications/read-all', methods=['PUT', 'POST'])
+@jwt_required()
+def mark_all_notifications_read():
+    """Mark all notifications as read - available to all authenticated users"""
+    user_id = get_jwt_identity()
+    
+    Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).update({'is_read': True})
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Все уведомления отмечены как прочитанные'}), 200

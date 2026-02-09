@@ -3,66 +3,108 @@
 {% block title %}Аллергии - Школьная столовая{% endblock %}
 
 {% block content %}
+<!-- Toast container for notifications -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="bi bi-check-circle me-2"></i>
-                <span id="toastMessage">Операция успешна!</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong class="me-auto">Успешно</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
+        <div class="toast-body" id="toastMessage">Операция успешна!</div>
     </div>
-    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="bi bi-exclamation-circle me-2"></i>
-                <span id="errorToastMessage">Произошла ошибка!</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong class="me-auto">Ошибка</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="errorToastMessage">Произошла ошибка!</div>
+    </div>
+</div>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-exclamation-triangle text-warning"></i> Мои аллергии
+            </h2>
+            <p class="text-muted mb-0">Управление диетическими ограничениями и аллергиями</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <a href="/student/dashboard" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Назад к панели
+            </a>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-exclamation-triangle"></i> Мои аллергии</h2>
-        <p class="text-muted">Управление диетическими ограничениями и аллергиями</p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Добавить аллергию</h5>
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Add Allergy Form -->
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon" style="background: rgba(255, 193, 7, 0.1); color: #b38f00;">
+                        <i class="bi bi-plus-circle"></i>
+                    </div>
+                    <h5 class="mb-0">Добавить аллергию</h5>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="content-card-body">
                 <form id="allergyForm">
                     <div class="mb-3">
-                        <label class="form-label">Тип аллергии</label>
-                        <input type="text" class="form-control" id="allergyType" required placeholder="например: орехи, молочные, глютен">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-tag me-1"></i> Тип аллергии
+                        </label>
+                        <input type="text" class="form-control" id="allergyType" required placeholder="например: орехи, молочные продукты, глютен">
+                        <div class="form-text">Укажите конкретные продукты, на которые у вас аллергия</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Примечания</label>
-                        <textarea class="form-control" id="allergyNotes" rows="2" placeholder="Дополнительная информация..."></textarea>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-sticky me-1"></i> Примечания
+                        </label>
+                        <textarea class="form-control" id="allergyNotes" rows="3" placeholder="Дополнительная информация о реакции или ограничениях..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">Добавить</button>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-plus-lg me-2"></i> Добавить аллергию
+                    </button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Мои аллергии</h5>
-            </div>
-            <div class="card-body">
-                <div id="allergiesLoading" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm"></div>
+    <!-- My Allergies List -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-secondary">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h5 class="mb-0">Мои аллергии</h5>
                 </div>
-                <div id="allergiesList"></div>
+                <span class="badge bg-warning text-dark" id="allergyCount">0</span>
+            </div>
+            <div class="content-card-body p-0">
+                <div id="allergiesLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Загрузка списка...</p>
+                </div>
+                <div id="allergiesContent" class="d-none">
+                    <ul class="activity-list" id="allergiesList"></ul>
+                </div>
+                <div id="noAllergies" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <p class="empty-state-text">Аллергии не указаны</p>
+                    <p class="text-muted small mb-0">Добавьте свои аллергии слева, если они есть</p>
+                </div>
             </div>
         </div>
     </div>
@@ -112,41 +154,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadAllergies() {
     const loadingEl = document.getElementById('allergiesLoading');
+    const contentEl = document.getElementById('allergiesContent');
     const listEl = document.getElementById('allergiesList');
+    const noAllergiesEl = document.getElementById('noAllergies');
+    const countEl = document.getElementById('allergyCount');
     
     try {
         const response = await Auth.apiCall('/api/allergies');
         
         if (response.ok) {
             const data = await response.json();
+            countEl.textContent = data.allergies ? data.allergies.length : 0;
             
             if (data.allergies && data.allergies.length > 0) {
                 listEl.innerHTML = data.allergies.map(a => `
-                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                        <div>
-                            <strong>${a.allergy_type}</strong>
-                            <p class="mb-0 small text-muted">${a.notes || ''}</p>
+                    <li class="activity-item">
+                        <div class="activity-icon warning">
+                            <i class="bi bi-exclamation-triangle"></i>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAllergy(${a.id})">
+                        <div class="activity-content">
+                            <div class="activity-title">${escapeHtml(a.allergy_type)}</div>
+                            <div class="activity-time">${a.notes ? escapeHtml(a.notes) : 'Без примечаний'}</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAllergy(${a.id})" title="Удалить">
                             <i class="bi bi-trash"></i>
                         </button>
-                    </div>
+                    </li>
                 `).join('');
+                
+                contentEl.classList.remove('d-none');
+                noAllergiesEl.classList.add('d-none');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center">Аллергии не записаны</p>';
+                contentEl.classList.add('d-none');
+                noAllergiesEl.classList.remove('d-none');
             }
             
             loadingEl.classList.add('d-none');
         }
     } catch (error) {
-        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки аллергий</p>';
+        listEl.innerHTML = `
+            <li class="activity-item">
+                <div class="activity-content text-center text-danger w-100">
+                    Ошибка загрузки аллергий
+                </div>
+            </li>
+        `;
+        contentEl.classList.remove('d-none');
         loadingEl.classList.add('d-none');
+        noAllergiesEl.classList.add('d-none');
     }
 }
 
 async function deleteAllergy(id) {
-    if (!confirm('Удалить эту аллергию?')) return;
-    
+    // Delete immediately without confirmation
     try {
         const response = await Auth.apiCall(`/api/allergies/${id}`, {
             method: 'DELETE'
@@ -156,8 +216,17 @@ async function deleteAllergy(id) {
             loadAllergies();
         }
     } catch (error) {
-        alert('Ошибка при удалении аллергии');
+        const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+        document.getElementById('errorToastMessage').textContent = 'Ошибка при удалении аллергии';
+        toast.show();
     }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 {% endblock %}

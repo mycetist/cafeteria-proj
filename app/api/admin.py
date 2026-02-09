@@ -220,9 +220,9 @@ def get_all_purchase_requests():
             items.append(item_dict)
         
         req_dict['items'] = items
-        req_dict['total_cost'] = sum(
+        req_dict['total_cost'] = float(sum(
             item.estimated_cost for item in req.purchase_items
-        )
+        ))
         
         requests_data.append(req_dict)
     

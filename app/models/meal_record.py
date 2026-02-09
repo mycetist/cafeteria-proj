@@ -12,9 +12,7 @@ class MealRecord(db.Model):
     meal_type = db.Column(db.String(20), nullable=False)
     is_confirmed = db.Column(db.Boolean, default=False)
     
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'menu_id', name='unique_user_menu'),
-    )
+
     
     def to_dict(self):
         return {

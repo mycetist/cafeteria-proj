@@ -3,138 +3,143 @@
 {% block title %}Подтверждение заказов - Панель администратора{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
-            <div class="sidebar-sticky pt-3">
-                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Меню администратора</span>
-                </h6>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>Панель
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/statistics">
-                            <i class="bi bi-graph-up me-2"></i>Статистика
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active text-white bg-primary" href="/admin/purchase-approval">
-                            <i class="bi bi-cart-check me-2"></i>Заказы
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/reports">
-                            <i class="bi bi-file-earmark-text me-2"></i>Отчёты
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-
-        <!-- Main content -->
-        <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Подтверждение заказов</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="loadRequests('all')">Все</button>
-                        <button class="btn btn-sm btn-outline-warning active" onclick="loadRequests('pending')">Ожидают</button>
-                        <button class="btn btn-sm btn-outline-success" onclick="loadRequests('approved')">Одобрено</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="loadRequests('rejected')">Отклонено</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alerts -->
-            <div id="alert-container"></div>
-
-            <!-- Purchase Requests Table -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Заказы на закупку</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Создатель</th>
-                                    <th>Дата</th>
-                                    <th>Товары</th>
-                                    <th>Сумма</th>
-                                    <th>Статус</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody id="requests-table-body">
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted">Загрузка заказов...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Request Details Modal -->
-            <div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Детали заказа</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="request-details">
-                            <!-- Content loaded dynamically -->
-                        </div>
-                        <div class="modal-footer" id="request-actions">
-                            <!-- Actions loaded dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div>
+        <h2 class="mb-1">
+            <i class="bi bi-cart-check text-primary"></i> Подтверждение заказов
+        </h2>
+        <p class="text-muted mb-0">Управление заявками на закупку</p>
     </div>
 </div>
 
-{% block scripts %}
-<script>
-let currentFilter = 'pending';
-let currentRequestId = null;
+<!-- Filter Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="btn-group" role="group">
+            <button class="btn btn-outline-secondary" onclick="loadRequests('all', this)">
+                <i class="bi bi-list-ul me-1"></i> Все
+            </button>
+            <button class="btn btn-outline-warning active" onclick="loadRequests('pending', this)">
+                <i class="bi bi-clock me-1"></i> Ожидают
+            </button>
+            <button class="btn btn-outline-success" onclick="loadRequests('approved', this)">
+                <i class="bi bi-check-circle me-1"></i> Одобрено
+            </button>
+            <button class="btn btn-outline-danger" onclick="loadRequests('rejected', this)">
+                <i class="bi bi-x-circle me-1"></i> Отклонено
+            </button>
+        </div>
+    </div>
+</div>
 
-// Load requests on page load
+<!-- Alerts -->
+<div id="alert-container"></div>
+
+<!-- Purchase Requests Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-warning">
+                        <i class="bi bi-cart"></i>
+                    </div>
+                    <h5 class="mb-0">Заявки на закупку</h5>
+                </div>
+            </div>
+            <div class="content-card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Создатель</th>
+                                <th>Дата</th>
+                                <th>Товары</th>
+                                <th>Сумма</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-table-body">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Загрузка заказов...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Details Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Детали заказа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="request-details">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer" id="request-actions">
+                <!-- Actions loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireRole('admin');
+
+let currentFilter = 'pending';
+
 document.addEventListener('DOMContentLoaded', function() {
     loadRequests('pending');
 });
 
-async function loadRequests(filter = 'all') {
+async function loadRequests(filter = 'all', clickedBtn = null) {
     currentFilter = filter;
     
     // Update button states
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    event?.target?.classList.add('active');
+    
+    // Set active button
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    } else {
+        // Find button by onclick attribute and activate it
+        const buttons = document.querySelectorAll('.btn-group .btn');
+        buttons.forEach(btn => {
+            const onclick = btn.getAttribute('onclick');
+            if (onclick && onclick.includes(`'${filter}'`)) {
+                btn.classList.add('active');
+            }
+        });
+    }
     
     try {
-        const token = localStorage.getItem('access_token');
-        const url = filter === 'all' 
+        const url = filter === 'all'
             ? '/api/admin/purchase-requests'
             : `/api/admin/purchase-requests?status=${filter}`;
         
-        const response = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await Auth.apiCall(url);
         
         if (response.ok) {
             const data = await response.json();
-            renderRequestsTable(data.purchase_requests);
+            renderRequestsTable(data.purchase_requests || []);
         } else {
             showAlert('Не удалось загрузить заказы', 'danger');
         }
@@ -150,7 +155,12 @@ function renderRequestsTable(requests) {
     if (requests.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center text-muted">Заказы не найдены</td>
+                <td colspan="7" class="text-center py-5">
+                    <div class="empty-state-icon mx-auto">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <p class="empty-state-text">Заказы не найдены</p>
+                </td>
             </tr>
         `;
         return;
@@ -159,14 +169,16 @@ function renderRequestsTable(requests) {
     tbody.innerHTML = requests.map(req => {
         const itemCount = req.items ? req.items.length : 0;
         const statusBadge = getStatusBadge(req.status);
+        const createdDate = new Date(req.created_at);
+        const formattedDate = createdDate.toLocaleDateString('ru-RU');
         
         let actions = '';
         if (req.status === 'pending') {
             actions = `
-                <button class="btn btn-sm btn-success me-1" onclick="approveRequest(${req.id})">
+                <button class="btn btn-sm btn-success me-1" onclick="approveRequest(${req.id})" title="Одобрить">
                     <i class="bi bi-check-lg"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="rejectRequest(${req.id})">
+                <button class="btn btn-sm btn-danger" onclick="rejectRequest(${req.id})" title="Отклонить">
                     <i class="bi bi-x-lg"></i>
                 </button>
             `;
@@ -176,11 +188,11 @@ function renderRequestsTable(requests) {
         
         return `
             <tr>
-                <td>${req.id}</td>
+                <td><strong>#${req.id}</strong></td>
                 <td>${req.creator_name || 'Неизвестно'}</td>
-                <td>${new Date(req.created_at).toLocaleDateString()}</td>
+                <td>${formattedDate}</td>
                 <td>${itemCount} шт.</td>
-                <td>${(req.total_cost || 0).toFixed(2)} ₽</td>
+                <td><strong>${(req.total_cost || 0).toFixed(2)} ₽</strong></td>
                 <td>${statusBadge}</td>
                 <td>${actions}</td>
             </tr>
@@ -190,7 +202,7 @@ function renderRequestsTable(requests) {
 
 function getStatusBadge(status) {
     const badges = {
-        'pending': '<span class="badge bg-warning">Ожидает</span>',
+        'pending': '<span class="badge bg-warning text-dark">Ожидает</span>',
         'approved': '<span class="badge bg-success">Одобрено</span>',
         'rejected': '<span class="badge bg-danger">Отклонено</span>'
     };
@@ -201,13 +213,8 @@ async function approveRequest(requestId) {
     if (!confirm('Вы уверены, что хотите одобрить этот заказ?')) return;
     
     try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`/api/admin/purchase-requests/${requestId}`, {
+        const response = await Auth.apiCall(`/api/admin/purchase-requests/${requestId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ status: 'approved' })
         });
         
@@ -215,7 +222,8 @@ async function approveRequest(requestId) {
             showAlert('Заказ успешно одобрен', 'success');
             loadRequests(currentFilter);
         } else {
-            showAlert('Не удалось одобрить заказ', 'danger');
+            const data = await response.json();
+            showAlert(data.error || 'Не удалось одобрить заказ', 'danger');
         }
     } catch (error) {
         console.error('Error approving request:', error);
@@ -227,13 +235,8 @@ async function rejectRequest(requestId) {
     if (!confirm('Вы уверены, что хотите отклонить этот заказ?')) return;
     
     try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`/api/admin/purchase-requests/${requestId}`, {
+        const response = await Auth.apiCall(`/api/admin/purchase-requests/${requestId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ status: 'rejected' })
         });
         
@@ -241,7 +244,8 @@ async function rejectRequest(requestId) {
             showAlert('Заказ отклонён', 'success');
             loadRequests(currentFilter);
         } else {
-            showAlert('Не удалось отклонить заказ', 'danger');
+            const data = await response.json();
+            showAlert(data.error || 'Не удалось отклонить заказ', 'danger');
         }
     } catch (error) {
         console.error('Error rejecting request:', error);
@@ -262,5 +266,4 @@ function showAlert(message, type) {
     setTimeout(() => alert.remove(), 5000);
 }
 </script>
-{% endblock %}
 {% endblock %}

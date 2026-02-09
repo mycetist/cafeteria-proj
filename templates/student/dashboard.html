@@ -80,18 +80,34 @@
                     <p class="text-white-50 mt-2 mb-0">Проверка статуса...</p>
                 </div>
                 <div id="mealConfirmContent" class="d-none">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <!-- Breakfast Status -->
+                    <div class="meal-status-row d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 pb-3 border-bottom border-white border-opacity-25">
                         <div class="d-flex align-items-center">
                             <div class="meal-confirm-icon me-3">
-                                <i class="bi bi-check-circle-fill"></i>
+                                <i class="bi bi-sunrise"></i>
                             </div>
                             <div>
-                                <h5 class="meal-confirm-title mb-1">Подтверждение получения питания</h5>
-                                <p class="meal-confirm-status mb-0" id="mealConfirmStatus"></p>
+                                <h5 class="meal-confirm-title mb-1">Завтрак</h5>
+                                <p class="meal-confirm-status mb-0" id="breakfastStatus">-</p>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-light btn-lg" id="confirmMealBtn" data-bs-toggle="modal" data-bs-target="#mealConfirmModal">
-                            <i class="bi bi-check2-circle me-2"></i> Подтвердить получение
+                        <button type="button" class="btn btn-light" id="confirmBreakfastBtn" data-bs-toggle="modal" data-bs-target="#mealConfirmModal" onclick="setMealType('breakfast')">
+                            <i class="bi bi-check2-circle me-2"></i> Подтвердить завтрак
+                        </button>
+                    </div>
+                    <!-- Lunch Status -->
+                    <div class="meal-status-row d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="meal-confirm-icon me-3">
+                                <i class="bi bi-sun"></i>
+                            </div>
+                            <div>
+                                <h5 class="meal-confirm-title mb-1">Обед</h5>
+                                <p class="meal-confirm-status mb-0" id="lunchStatus">-</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-light" id="confirmLunchBtn" data-bs-toggle="modal" data-bs-target="#mealConfirmModal" onclick="setMealType('lunch')">
+                            <i class="bi bi-check2-circle me-2"></i> Подтвердить обед
                         </button>
                     </div>
                 </div>
@@ -278,74 +294,105 @@ document.addEventListener('DOMContentLoaded', function() {
 async function checkMealConfirmationStatus() {
     const loadingEl = document.getElementById('mealConfirmLoading');
     const contentEl = document.getElementById('mealConfirmContent');
-    const statusEl = document.getElementById('mealConfirmStatus');
-    const btnEl = document.getElementById('confirmMealBtn');
-    const infoTextEl = document.getElementById('mealConfirmInfoText');
     const cardEl = document.getElementById('mealConfirmCard');
     
+    // Breakfast elements
+    const breakfastStatusEl = document.getElementById('breakfastStatus');
+    const breakfastBtn = document.getElementById('confirmBreakfastBtn');
+    
+    // Lunch elements
+    const lunchStatusEl = document.getElementById('lunchStatus');
+    const lunchBtn = document.getElementById('confirmLunchBtn');
+    
     try {
-        // Check subscription status
-        const subResponse = await Auth.apiCall('/api/subscription');
-        let hasActiveSubscription = false;
-        let mealsRemaining = 0;
+        // Use the new endpoint that provides separate breakfast/lunch status
+        const statusResponse = await Auth.apiCall('/api/meals/today-status');
         
-        if (subResponse.ok) {
-            const subData = await subResponse.json();
-            if (subData.subscription && subData.subscription.is_active) {
-                hasActiveSubscription = true;
-                mealsRemaining = subData.subscription.meals_remaining;
-            }
+        if (!statusResponse.ok) {
+            throw new Error('Failed to fetch meal status');
         }
         
-        // Check if already confirmed today
-        const today = new Date().toISOString().split('T')[0];
-        const mealsResponse = await Auth.apiCall('/api/meals/my');
-        let alreadyConfirmedToday = false;
-        
-        if (mealsResponse.ok) {
-            const mealsData = await mealsResponse.json();
-            if (mealsData.meals) {
-                alreadyConfirmedToday = mealsData.meals.some(m => 
-                    m.received_at && m.received_at.startsWith(today) && m.is_confirmed
-                );
-            }
-        }
+        const statusData = await statusResponse.json();
         
         loadingEl.classList.add('d-none');
         contentEl.classList.remove('d-none');
         
-        if (alreadyConfirmedToday) {
-            cardEl.className = 'meal-confirm-card meal-confirm-success';
-            statusEl.innerHTML = '<span class="badge bg-white text-success fs-6"><i class="bi bi-check-circle"></i> Вы уже получили питание сегодня</span>';
-            btnEl.disabled = true;
-            btnEl.innerHTML = '<i class="bi bi-check-circle me-2"></i> Получено';
-            infoTextEl.textContent = 'Вы уже подтвердили получение питания сегодня.';
-        } else if (!hasActiveSubscription) {
-            cardEl.className = 'meal-confirm-card meal-confirm-warning';
-            statusEl.innerHTML = '<span class="badge bg-white text-warning fs-6"><i class="bi bi-exclamation-triangle"></i> У вас нет активного абонемента</span>';
-            btnEl.disabled = true;
-            btnEl.innerHTML = '<i class="bi bi-x-circle me-2"></i> Недоступно';
-            infoTextEl.innerHTML = 'У вас нет активного абонемента. <a href="/student/payment" class="alert-link">Оформить абонемент</a>';
-        } else if (mealsRemaining <= 0) {
-            cardEl.className = 'meal-confirm-card meal-confirm-warning';
-            statusEl.innerHTML = '<span class="badge bg-white text-warning fs-6"><i class="bi bi-exclamation-triangle"></i> Исчерпаны обеды по абонементу</span>';
-            btnEl.disabled = true;
-            btnEl.innerHTML = '<i class="bi bi-x-circle me-2"></i> Недоступно';
-            infoTextEl.innerHTML = 'У вас закончились обеды по абонементу. <a href="/student/payment" class="alert-link">Пополнить</a>';
+        // Update breakfast status
+        if (statusData.breakfast.claimed) {
+            breakfastStatusEl.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Получено</span>';
+            breakfastBtn.disabled = true;
+            breakfastBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i> Получено';
+        } else if (statusData.breakfast.can_claim) {
+            breakfastStatusEl.innerHTML = '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Ожидает получения</span>';
+            breakfastBtn.disabled = false;
+            breakfastBtn.innerHTML = '<i class="bi bi-check2-circle me-2"></i> Подтвердить завтрак';
         } else {
-            cardEl.className = 'meal-confirm-card meal-confirm-active';
-            statusEl.innerHTML = `<span class="badge bg-white text-primary fs-6"><i class="bi bi-utensils"></i> Осталось обедов: ${mealsRemaining}</span>`;
-            btnEl.disabled = false;
-            btnEl.innerHTML = '<i class="bi bi-check2-circle me-2"></i> Подтвердить получение';
-            infoTextEl.textContent = `У вас активный абонемент. Осталось обедов: ${mealsRemaining}`;
+            breakfastStatusEl.innerHTML = '<span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Недоступно</span>';
+            breakfastBtn.disabled = true;
+            breakfastBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i> Недоступно';
         }
+        
+        // Update lunch status
+        if (statusData.lunch.claimed) {
+            lunchStatusEl.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Получено</span>';
+            lunchBtn.disabled = true;
+            lunchBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i> Получено';
+        } else if (statusData.lunch.can_claim) {
+            lunchStatusEl.innerHTML = '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Ожидает получения</span>';
+            lunchBtn.disabled = false;
+            lunchBtn.innerHTML = '<i class="bi bi-check2-circle me-2"></i> Подтвердить обед';
+        } else {
+            lunchStatusEl.innerHTML = '<span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Недоступно</span>';
+            lunchBtn.disabled = true;
+            lunchBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i> Недоступно';
+        }
+        
+        // Update card appearance based on overall status
+        const bothClaimed = statusData.breakfast.claimed && statusData.lunch.claimed;
+        const anyClaimed = statusData.breakfast.claimed || statusData.lunch.claimed;
+        const anyAvailable = statusData.breakfast.can_claim || statusData.lunch.can_claim;
+        
+        if (bothClaimed) {
+            cardEl.className = 'meal-confirm-card meal-confirm-success';
+        } else if (anyAvailable) {
+            cardEl.className = 'meal-confirm-card meal-confirm-active';
+        } else if (anyClaimed) {
+            cardEl.className = 'meal-confirm-card meal-confirm-success';
+        } else {
+            cardEl.className = 'meal-confirm-card meal-confirm-warning';
+        }
+        
+        // Update modal info text with subscription status
+        const infoTextEl = document.getElementById('mealConfirmInfoText');
+        if (statusData.subscription_active) {
+            infoTextEl.textContent = `У вас активный абонемент. Осталось приёмов пищи: ${statusData.meals_remaining}`;
+        } else if (statusData.breakfast.has_purchase || statusData.lunch.has_purchase) {
+            infoTextEl.textContent = 'У вас есть купленные блюда на сегодня.';
+        } else {
+            infoTextEl.innerHTML = 'У вас нет активного абонемента или купленных блюд. <a href="/student/menu" class="alert-link">Купить блюдо</a> или <a href="/student/payment" class="alert-link">оформить абонемент</a>';
+        }
+        
     } catch (error) {
         console.error('Error checking meal confirmation status:', error);
         loadingEl.classList.add('d-none');
         contentEl.classList.remove('d-none');
         cardEl.className = 'meal-confirm-card meal-confirm-error';
-        statusEl.innerHTML = '<span class="badge bg-white text-danger fs-6"><i class="bi bi-x-circle"></i> Ошибка проверки статуса</span>';
-        btnEl.disabled = true;
+        breakfastStatusEl.innerHTML = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Ошибка</span>';
+        lunchStatusEl.innerHTML = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Ошибка</span>';
+        breakfastBtn.disabled = true;
+        lunchBtn.disabled = true;
+    }
+}
+
+// Set meal type when button is clicked
+function setMealType(type) {
+    const breakfastRadio = document.getElementById('mealBreakfast');
+    const lunchRadio = document.getElementById('mealLunch');
+    
+    if (type === 'breakfast') {
+        breakfastRadio.checked = true;
+    } else {
+        lunchRadio.checked = true;
     }
 }
 
@@ -359,21 +406,51 @@ async function confirmMeal() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Подтверждение...';
     
     try {
-        const response = await Auth.apiCall('/api/meal/confirm', {
-            method: 'POST',
-            body: JSON.stringify({ meal_type: mealType })
-        });
+        // First check if user has unused dish purchases for this meal type
+        const purchasesResponse = await Auth.apiCall('/api/purchases');
+        let unusedPurchase = null;
+        
+        if (purchasesResponse.ok) {
+            const purchasesData = await purchasesResponse.json();
+            const today = new Date().toISOString().split('T')[0];
+            if (purchasesData.purchases) {
+                unusedPurchase = purchasesData.purchases.find(p => 
+                    !p.is_used && 
+                    p.purchase_date && p.purchase_date.startsWith(today) &&
+                    (p.meal_type === mealType || (!p.meal_type && mealType === 'lunch'))
+                );
+            }
+        }
+        
+        let response;
+        if (unusedPurchase) {
+            // Use the dish purchase endpoint
+            response = await Auth.apiCall(`/api/purchases/${unusedPurchase.id}/use`, {
+                method: 'POST'
+            });
+        } else {
+            // Use regular meal confirm endpoint (for subscriptions)
+            response = await Auth.apiCall('/api/meal/confirm', {
+                method: 'POST',
+                body: JSON.stringify({ meal_type: mealType })
+            });
+        }
         
         const data = await response.json();
         
         if (response.ok) {
             modal.hide();
-            showToast('success', 'Успешно', 'Питание успешно подтверждено!');
+            const mealTypeRu = mealType === 'breakfast' ? 'Завтрак' : 'Обед';
+            showToast('success', 'Успешно', `${mealTypeRu} успешно подтверждён!`);
             checkMealConfirmationStatus();
             loadRecentActivity();
         } else if (response.status === 409) {
             modal.hide();
-            showToast('warning', 'Внимание', 'Вы уже подтвердили получение питания сегодня.');
+            showToast('warning', 'Внимание', data.error || 'Вы уже подтвердили получение этого приёма пищи сегодня.');
+            checkMealConfirmationStatus();
+        } else if (response.status === 403) {
+            modal.hide();
+            showToast('warning', 'Нет доступа', data.error || 'У вас закончились доступные приёмы пищи.');
             checkMealConfirmationStatus();
         } else {
             showToast('danger', 'Ошибка', data.error || 'Не удалось подтвердить питание');

@@ -16,6 +16,7 @@ class Dish(db.Model):
     menu_items = db.relationship('MenuItem', backref='dish', lazy=True, cascade='all, delete-orphan')
     dish_ingredients = db.relationship('DishIngredient', backref='dish', lazy=True, cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='dish', lazy=True, cascade='all, delete-orphan')
+    purchases = db.relationship('DishPurchase', backref='dish', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         return {

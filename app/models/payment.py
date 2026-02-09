@@ -58,3 +58,35 @@ class Subscription(db.Model):
     
     def __repr__(self):
         return f'<Subscription {self.id} - {self.subscription_type}>'
+
+
+class DishPurchase(db.Model):
+    __tablename__ = 'dish_purchases'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    dish_id = db.Column(db.Integer, db.ForeignKey('dishes.id'), nullable=False)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), nullable=True)
+    price_paid = db.Column(db.Numeric(10, 2), nullable=False)
+    purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
+    is_used = db.Column(db.Boolean, default=False)  # Whether the meal was received
+    meal_type = db.Column(db.String(20), nullable=True)  # 'breakfast' or 'lunch'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'dish_id': self.dish_id,
+            'menu_id': self.menu_id,
+            'price_paid': float(self.price_paid) if self.price_paid else 0,
+            'purchase_date': self.purchase_date.isoformat() if self.purchase_date else None,
+            'is_used': self.is_used,
+            'meal_type': self.meal_type
+        }
+    
+    def mark_as_used(self):
+        """Mark this purchase as used (meal received)"""
+        self.is_used = True
+    
+    def __repr__(self):
+        return f'<DishPurchase User {self.user_id} - Dish {self.dish_id}>'

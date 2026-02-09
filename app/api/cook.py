@@ -6,7 +6,7 @@ from app.extensions import db
 from app.utils.decorators import cook_required
 from app.models import (
     User, Dish, Menu, MenuItem, Inventory, Ingredient,
-    MealRecord, PurchaseRequest, PurchaseItem, Notification, Allergy, Review
+    MealRecord, PurchaseRequest, PurchaseItem, Notification, Allergy, Review, DishPurchase
 )
 
 
@@ -49,11 +49,25 @@ def get_today_meals():
     
     meal_records = MealRecord.query.filter_by(menu_id=menu.id).all()
     
+    # Build meals data with user info
+    meals_data = []
+    for mr in meal_records:
+        meal_dict = mr.to_dict()
+        # Add user info
+        user = User.query.get(mr.user_id)
+        if user:
+            meal_dict['user'] = {
+                'id': user.id,
+                'full_name': user.full_name,
+                'email': user.email
+            }
+        meals_data.append(meal_dict)
+    
     return jsonify({
         'menu': menu.to_dict(),
         'dishes': dishes,
         'total_served': total_served,
-        'meals': [mr.to_dict() for mr in meal_records]  # renamed for template compatibility
+        'meals': meals_data
     }), 200
 
 
@@ -120,25 +134,9 @@ def serve_meal():
             return jsonify({'error': 'Меню не найдено'}), 404
         meal_type = menu.meal_type
     
-    # Check for existing record today
-    existing = MealRecord.query.filter(
-        MealRecord.user_id == user_id,
-        MealRecord.meal_type == meal_type,
-        db.func.date(MealRecord.received_at) == today
-    ).first()
-    
-    if existing and existing.is_confirmed:
-        return jsonify({'error': 'Питание уже выдано этому пользователю сегодня'}), 409
-    
-    if existing:
-        existing.is_confirmed = True
-        existing.received_at = datetime.utcnow()
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'Питание успешно выдано',
-            'meal_record': existing.to_dict()
-        }), 200
+    # NOTE: Allow multiple subscription meals per day
+    # Removed the check that prevents serving multiple meals to the same user per day
+    # Cooks can now serve multiple meals to users who have subscription meals remaining
     
     meal_record = MealRecord(
         user_id=user_id,
@@ -160,34 +158,54 @@ def serve_meal():
 @cook_bp.route('/meals/search-student', methods=['GET'])
 @cook_required
 def search_student():
-    query = request.args.get('q', '')
-    
-    if not query or len(query) < 2:
-        return jsonify({'error': 'Поисковый запрос должен быть не менее 2 символов'}), 400
-    
-    students = User.query.filter(
-        User.role == 'student',
-        db.or_(
-            User.email.ilike(f'%{query}%'),
-            User.full_name.ilike(f'%{query}%')
-        )
-    ).limit(10).all()
-    
-    results = []
-    for student in students:
-        student_data = student.to_dict()
+    try:
+        query = request.args.get('q', '')
+
+        if not query or len(query) < 2:
+            return jsonify({'error': 'Поисковый запрос должен быть не менее 2 символов'}), 400
+
+        # SQLite's LOWER() doesn't handle Cyrillic properly, so we fetch all students
+        # and filter in Python for proper case-insensitive Unicode search
+        query_lower = query.lower()
         
-        subscription = student.subscriptions.filter_by(is_active=True).first()
-        student_data['has_subscription'] = subscription is not None
-        if subscription:
-            student_data['meals_remaining'] = subscription.meals_remaining
+        all_students = User.query.filter_by(role='student').all()
         
-        allergies = Allergy.query.filter_by(user_id=student.id).all()
-        student_data['allergies'] = [a.allergy_type for a in allergies]
+        # Filter students by name or email (case-insensitive, Unicode-aware)
+        # Handle potential None values for full_name and email
+        students = []
+        for s in all_students:
+            full_name = (s.full_name or '').lower()
+            email = (s.email or '').lower()
+            if query_lower in full_name or query_lower in email:
+                students.append(s)
+            if len(students) >= 10:
+                break
         
-        results.append(student_data)
-    
-    return jsonify({'students': results}), 200
+        results = []
+        for student in students:
+            student_data = student.to_dict()
+            
+            # Filter subscriptions in Python (student.subscriptions is a list, not a query)
+            active_subscription = None
+            for sub in student.subscriptions:
+                if sub.is_active:
+                    active_subscription = sub
+                    break
+            
+            student_data['has_subscription'] = active_subscription is not None
+            if active_subscription:
+                student_data['meals_remaining'] = active_subscription.meals_remaining
+            
+            allergies = Allergy.query.filter_by(user_id=student.id).all()
+            student_data['allergies'] = [a.allergy_type for a in allergies]
+            
+            results.append(student_data)
+        
+        return jsonify({'students': results}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Ошибка поиска: {str(e)}'}), 500
 
 
 @cook_bp.route('/inventory', methods=['GET'])
@@ -204,6 +222,7 @@ def get_inventory():
             item_data = item.to_dict()
             # Include nested ingredient data for template compatibility
             item_data['ingredient'] = {
+                'id': ingredient.id,
                 'name': ingredient.name,
                 'unit': ingredient.unit,
                 'min_stock_level': float(ingredient.min_stock_level)
@@ -507,3 +526,174 @@ def get_all_reviews():
         reviews_data.append(review_dict)
     
     return jsonify({'reviews': reviews_data}), 200
+
+
+@cook_bp.route('/meals/purchases', methods=['GET'])
+@cook_required
+def get_today_purchases():
+    """Get all dish purchases for today with user details - for cook to see what was purchased"""
+    from datetime import date
+    
+    today = date.today()
+    meal_type = request.args.get('meal_type', None)  # Optional filter by breakfast/lunch
+    
+    # Get purchases from today
+    query = DishPurchase.query.filter(
+        db.func.date(DishPurchase.purchase_date) == today
+    )
+    
+    if meal_type:
+        query = query.filter_by(meal_type=meal_type)
+    
+    purchases = query.order_by(DishPurchase.purchase_date.desc()).all()
+    
+    purchases_data = []
+    for purchase in purchases:
+        purchase_dict = purchase.to_dict()
+        
+        # Add user info
+        user = User.query.get(purchase.user_id)
+        if user:
+            purchase_dict['user'] = {
+                'id': user.id,
+                'full_name': user.full_name,
+                'email': user.email
+            }
+            # Add allergies
+            allergies = Allergy.query.filter_by(user_id=user.id).all()
+            purchase_dict['user']['allergies'] = [a.allergy_type for a in allergies]
+        
+        # Add dish info
+        dish = Dish.query.get(purchase.dish_id)
+        if dish:
+            purchase_dict['dish'] = dish.to_dict()
+        
+        # Add menu info
+        if purchase.menu_id:
+            menu = Menu.query.get(purchase.menu_id)
+            if menu:
+                purchase_dict['menu'] = menu.to_dict()
+        
+        purchases_data.append(purchase_dict)
+    
+    # Group by meal_type
+    breakfast_purchases = [p for p in purchases_data if p.get('meal_type') == 'breakfast']
+    lunch_purchases = [p for p in purchases_data if p.get('meal_type') == 'lunch' or not p.get('meal_type')]
+    
+    return jsonify({
+        'purchases': purchases_data,
+        'breakfast': breakfast_purchases,
+        'lunch': lunch_purchases,
+        'total_count': len(purchases_data),
+        'used_count': len([p for p in purchases_data if p.get('is_used')]),
+        'pending_count': len([p for p in purchases_data if not p.get('is_used')])
+    }), 200
+
+
+@cook_bp.route('/meals/student-purchases/<int:user_id>', methods=['GET'])
+@cook_required
+def get_student_purchases(user_id):
+    """Get all dish purchases for a specific student"""
+    from datetime import date
+    
+    today = date.today()
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    # Get today's purchases for this user
+    purchases = DishPurchase.query.filter(
+        DishPurchase.user_id == user_id,
+        db.func.date(DishPurchase.purchase_date) == today
+    ).order_by(DishPurchase.purchase_date.desc()).all()
+    
+    purchases_data = []
+    for purchase in purchases:
+        purchase_dict = purchase.to_dict()
+        dish = Dish.query.get(purchase.dish_id)
+        if dish:
+            purchase_dict['dish'] = dish.to_dict()
+        purchases_data.append(purchase_dict)
+    
+    # Also get subscription info
+    subscription = user.subscriptions.filter_by(is_active=True).first()
+    
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'full_name': user.full_name,
+            'email': user.email
+        },
+        'purchases': purchases_data,
+        'subscription': subscription.to_dict() if subscription else None,
+        'balance': float(user.balance) if user.balance else 0.00
+    }), 200
+
+
+@cook_bp.route('/meals/serve-purchase', methods=['POST'])
+@cook_required
+def serve_purchase():
+    """Serve a dish purchase - mark as used and create meal record"""
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'Данные не предоставлены'}), 400
+    
+    purchase_id = data.get('purchase_id')
+    user_id = data.get('user_id')
+    
+    if purchase_id:
+        purchase = DishPurchase.query.get(purchase_id)
+        if not purchase:
+            return jsonify({'error': 'Покупка не найдена'}), 404
+        
+        if purchase.is_used:
+            return jsonify({'error': 'Это блюдо уже было выдано'}), 409
+        
+        purchase.mark_as_used()
+        user_id = purchase.user_id
+        
+    elif user_id:
+        # Find unused purchase for this user today
+        today = date.today()
+        purchase = DishPurchase.query.filter(
+            DishPurchase.user_id == user_id,
+            DishPurchase.is_used == False,
+            db.func.date(DishPurchase.purchase_date) == today
+        ).first()
+        
+        if not purchase:
+            return jsonify({'error': 'Нет неиспользованных покупок для этого пользователя'}), 404
+        
+        purchase.mark_as_used()
+    else:
+        return jsonify({'error': 'Необходим purchase_id или user_id'}), 400
+    
+    # Create meal record
+    meal_record = MealRecord(
+        user_id=user_id,
+        menu_id=purchase.menu_id,
+        meal_type=purchase.meal_type or 'lunch',
+        is_confirmed=True,
+        received_at=datetime.utcnow()
+    )
+    
+    db.session.add(meal_record)
+    db.session.commit()
+    
+    # Notify user
+    dish = Dish.query.get(purchase.dish_id)
+    notification = Notification(
+        user_id=user_id,
+        title='Питание выдано',
+        message=f'Повар выдал вам "{dish.name if dish else "блюдо"}"'
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Блюдо успешно выдано',
+        'purchase': purchase.to_dict(),
+        'meal_record': meal_record.to_dict()
+    }), 200

@@ -95,10 +95,18 @@ async function loadAllNotifications() {
                 loadingEl.classList.add('d-none');
                 noNotifEl.classList.remove('d-none');
             }
+        } else {
+            // Handle API error responses
+            console.error('API error:', response.status, response.statusText);
+            loadingEl.classList.add('d-none');
+            loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки уведомлений. Статус: ' + response.status + '</div>';
+            loadingEl.classList.remove('d-none');
         }
     } catch (error) {
         console.error('Error loading notifications:', error);
+        loadingEl.classList.add('d-none');
         loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки уведомлений</div>';
+        loadingEl.classList.remove('d-none');
     }
 }
 
@@ -139,7 +147,46 @@ async function markAllRead() {
 
 function formatNotificationTime(dateStr) {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ru-RU') + ' в ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    // Show relative time for recent notifications
+    if (diffMins < 1) {
+        return 'только что';
+    } else if (diffMins < 60) {
+        return `${diffMins} ${getPluralForm(diffMins, 'минуту', 'минуты', 'минут')} назад`;
+    } else if (diffHours < 24) {
+        return `${diffHours} ${getPluralForm(diffHours, 'час', 'часа', 'часов')} назад`;
+    } else if (diffDays < 7) {
+        return `${diffDays} ${getPluralForm(diffDays, 'день', 'дня', 'дней')} назад`;
+    }
+    
+    // For older notifications, show full date and time in user's timezone
+    return date.toLocaleDateString('ru-RU', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    }) + ' в ' + date.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZoneName: 'short'
+    });
+}
+
+function getPluralForm(number, one, few, many) {
+    const mod10 = number % 10;
+    const mod100 = number % 100;
+    
+    if (mod10 === 1 && mod100 !== 11) {
+        return one;
+    } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+        return few;
+    } else {
+        return many;
+    }
 }
 
 function showToast(type, title, message) {

@@ -45,12 +45,39 @@ def create_sample_student():
             email='student@school.com',
             full_name='Иван Иванов',
             role='student',
-            is_active=True
+            is_active=True,
+            balance=1000.00  # Give initial balance for testing
         )
         salt = bcrypt.gensalt()
         student.password_hash = bcrypt.hashpw('student123'.encode('utf-8'), salt).decode('utf-8')
         db.session.add(student)
+    else:
+        # Update balance if user exists
+        student.balance = 1000.00
     return student
+
+
+def create_additional_students():
+    """Create additional test students with initial balances"""
+    students_data = [
+        ('maria@school.com', 'Мария Петрова', 500.00),
+        ('alex@school.com', 'Алексей Сидоров', 750.00),
+        ('anna@school.com', 'Анна Кузнецова', 2000.00),
+    ]
+    
+    for email, name, balance in students_data:
+        student = User.query.filter_by(email=email).first()
+        if not student:
+            student = User(
+                email=email,
+                full_name=name,
+                role='student',
+                is_active=True,
+                balance=balance
+            )
+            salt = bcrypt.gensalt()
+            student.password_hash = bcrypt.hashpw('student123'.encode('utf-8'), salt).decode('utf-8')
+            db.session.add(student)
 
 
 def create_ingredients():
@@ -238,6 +265,7 @@ def seed_all():
         create_admin_user()
         create_cook_user()
         create_sample_student()
+        create_additional_students()
         create_ingredients()
         create_dishes()
         db.session.commit()

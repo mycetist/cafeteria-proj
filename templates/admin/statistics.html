@@ -3,158 +3,166 @@
 {% block title %}Статистика - Панель администратора{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
-            <div class="sidebar-sticky pt-3">
-                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Меню администратора</span>
-                </h6>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>Панель
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active text-white bg-primary" href="/admin/statistics">
-                            <i class="bi bi-graph-up me-2"></i>Статистика
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/purchase-approval">
-                            <i class="bi bi-cart-check me-2"></i>Заказы
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/admin/reports">
-                            <i class="bi bi-file-earmark-text me-2"></i>Отчёты
-                        </a>
-                    </li>
-                </ul>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-graph-up text-primary"></i> Статистика
+            </h2>
+            <p class="text-muted mb-0">Аналитика и метрики системы</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-7days" onclick="loadStatistics(7)">7 дней</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-30days" onclick="loadStatistics(30)">30 дней</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-90days" onclick="loadStatistics(90)">90 дней</button>
             </div>
-        </nav>
+        </div>
+    </div>
+</div>
 
-        <!-- Main content -->
-        <main role="main" class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Статистика</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-7days" onclick="loadStatistics(7)">7 дней</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-30days" onclick="loadStatistics(30)">30 дней</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-90days" onclick="loadStatistics(90)">90 дней</button>
-                    </div>
-                </div>
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="bi bi-cash-stack"></i>
             </div>
+            <div class="stat-content">
+                <div class="stat-label">Общая выручка</div>
+                <div class="stat-value" id="total-revenue">0 ₽</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="bi bi-utensils"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Всего обедов</div>
+                <div class="stat-value" id="total-meals">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Активные абонементы</div>
+                <div class="stat-value" id="active-subscriptions">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Всего учеников</div>
+                <div class="stat-value" id="total-students">0</div>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Summary Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-success">
-                        <div class="card-body">
-                            <h5 class="card-title">Общая выручка</h5>
-                            <h2 class="card-text" id="total-revenue">0 ₽</h2>
-                            <p class="card-text"><small>Завершённые платежи</small></p>
-                        </div>
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-success">
+                        <i class="bi bi-graph-up"></i>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-info">
-                        <div class="card-body">
-                            <h5 class="card-title">Всего обедов</h5>
-                            <h2 class="card-text" id="total-meals">0</h2>
-                            <p class="card-text"><small>Выдано ученикам</small></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning">
-                        <div class="card-body">
-                            <h5 class="card-title">Активные абонементы</h5>
-                            <h2 class="card-text" id="active-subscriptions">0</h2>
-                            <p class="card-text"><strong>Нажмите для просмотра</strong></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-danger">
-                        <div class="card-body">
-                            <h5 class="card-title">Всего учеников</h5>
-                            <h2 class="card-text" id="total-students">0</h2>
-                            <p class="card-text"><strong>Нажмите для просмотра</strong></p>
-                        </div>
-                    </div>
+                    <h5 class="mb-0">Динамика выручки</h5>
                 </div>
             </div>
-
-            <!-- Charts Section -->
-            <div class="row mb-4">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Динамика выручки</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="revenueChart" width="400" height="200"></canvas>
-                        </div>
+            <div class="content-card-body">
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon">
+                        <i class="bi bi-pie-chart"></i>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Выручка по типам</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="revenueTypeChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
+                    <h5 class="mb-0">Выручка по типам</h5>
                 </div>
             </div>
+            <div class="content-card-body">
+                <canvas id="revenueTypeChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Meals Section -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Посещаемость</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="attendanceChart" width="400" height="200"></canvas>
+<!-- Meals Section -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-secondary">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+                    <h5 class="mb-0">Посещаемость</h5>
+                </div>
+            </div>
+            <div class="content-card-body">
+                <canvas id="attendanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-warning">
+                        <i class="bi bi-utensils"></i>
+                    </div>
+                    <h5 class="mb-0">Обеды по типам</h5>
+                </div>
+            </div>
+            <div class="content-card-body">
+                <div class="row text-center g-3">
+                    <div class="col-6">
+                        <div class="stat-card stat-card-primary">
+                            <div class="stat-content">
+                                <div class="stat-label">Завтраки</div>
+                                <div class="stat-value" id="breakfast-count">0</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Обеды по типам</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-6">
-                                    <h1 class="display-4 text-primary" id="breakfast-count">0</h1>
-                                    <p class="text-muted">Завтраки</p>
-                                </div>
-                                <div class="col-6">
-                                    <h1 class="display-4 text-success" id="lunch-count">0</h1>
-                                    <p class="text-muted">Обеды</p>
-                                </div>
+                    <div class="col-6">
+                        <div class="stat-card stat-card-success">
+                            <div class="stat-content">
+                                <div class="stat-label">Обеды</div>
+                                <div class="stat-value" id="lunch-count">0</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+requireRole('admin');
+
 let currentDays = 30;
 
-// Load statistics on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadStatistics(30);
     loadDashboardStats();
@@ -170,29 +178,23 @@ async function loadStatistics(days) {
     document.getElementById(`btn-${days}days`).classList.add('active');
     
     try {
-        const token = localStorage.getItem('access_token');
-        
         // Fetch payment statistics
-        const paymentResponse = await fetch(`/api/admin/statistics/payments?days=${days}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const paymentResponse = await Auth.apiCall(`/api/admin/statistics/payments?days=${days}`);
         
         if (paymentResponse.ok) {
             const paymentData = await paymentResponse.json();
             updatePaymentStats(paymentData);
-            updateRevenueChart(paymentData.daily_revenue);
+            updateRevenueChart(paymentData.daily_revenue || []);
             updateRevenueTypeChart(paymentData);
         }
         
         // Fetch attendance statistics
-        const attendanceResponse = await fetch(`/api/admin/statistics/attendance?days=${days}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const attendanceResponse = await Auth.apiCall(`/api/admin/statistics/attendance?days=${days}`);
         
         if (attendanceResponse.ok) {
             const attendanceData = await attendanceResponse.json();
             updateAttendanceStats(attendanceData);
-            updateAttendanceChart(attendanceData.daily_attendance);
+            updateAttendanceChart(attendanceData.daily_attendance || []);
         }
         
     } catch (error) {
@@ -202,15 +204,12 @@ async function loadStatistics(days) {
 
 async function loadDashboardStats() {
     try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch('/api/admin/statistics/dashboard', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await Auth.apiCall('/api/admin/statistics/dashboard');
         
         if (response.ok) {
             const data = await response.json();
-            document.getElementById('active-subscriptions').textContent = data.users.active_subscriptions;
-            document.getElementById('total-students').textContent = data.users.total_students;
+            document.getElementById('active-subscriptions').textContent = data.users?.active_subscriptions || 0;
+            document.getElementById('total-students').textContent = data.users?.total_students || 0;
         }
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
@@ -218,11 +217,11 @@ async function loadDashboardStats() {
 }
 
 function updatePaymentStats(data) {
-    document.getElementById('total-revenue').textContent = data.total_revenue.toFixed(2) + ' ₽';
+    document.getElementById('total-revenue').textContent = (data.total_revenue || 0).toFixed(2) + ' ₽';
 }
 
 function updateAttendanceStats(data) {
-    document.getElementById('total-meals').textContent = data.total_meals;
+    document.getElementById('total-meals').textContent = data.total_meals || 0;
     document.getElementById('breakfast-count').textContent = data.breakfast_count || 0;
     document.getElementById('lunch-count').textContent = data.lunch_count || 0;
 }
@@ -237,7 +236,10 @@ function updateRevenueChart(dailyData) {
     window.revenueChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dailyData.map(d => d.date.substring(5)), // MM-DD
+            labels: dailyData.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+            }),
             datasets: [{
                 label: 'Выручка (₽)',
                 data: dailyData.map(d => d.revenue),
@@ -306,7 +308,10 @@ function updateAttendanceChart(dailyData) {
     window.attendanceChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: dailyData.map(d => d.date.substring(5)), // MM-DD
+            labels: dailyData.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+            }),
             datasets: [{
                 label: 'Обеды',
                 data: dailyData.map(d => d.count),
@@ -333,5 +338,4 @@ function updateAttendanceChart(dailyData) {
     });
 }
 </script>
-{% endblock %}
 {% endblock %}

@@ -5,78 +5,146 @@
 {% block content %}
 <!-- Toast container for notifications -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="bi bi-check-circle me-2"></i>
-                <span id="toastMessage">Операция успешна!</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong class="me-auto">Успешно</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
+        <div class="toast-body" id="toastMessage">Операция успешна!</div>
     </div>
-    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="bi bi-exclamation-circle me-2"></i>
-                <span id="errorToastMessage">Произошла ошибка!</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong class="me-auto">Ошибка</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="errorToastMessage">Произошла ошибка!</div>
+    </div>
+</div>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-star text-warning"></i> Мои отзывы
+            </h2>
+            <p class="text-muted mb-0">Оцените блюда и поделитесь своим мнением</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <a href="/student/dashboard" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Назад к панели
+            </a>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-star"></i> Мои отзывы</h2>
-        <p class="text-muted">Оцените блюда и поделитесь своим мнением</p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Написать отзыв</h5>
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Write Review Form -->
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon" style="background: rgba(255, 193, 7, 0.1); color: #b38f00;">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h5 class="mb-0">Написать отзыв</h5>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="content-card-body">
                 <form id="reviewForm">
                     <div class="mb-3">
-                        <label class="form-label">Выберите блюдо</label>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-utensils me-1"></i> Выберите блюдо
+                        </label>
                         <select class="form-select" id="dishSelect" required>
                             <option value="">Выберите блюдо...</option>
                         </select>
+                        <div class="form-text">Выберите блюдо из сегодняшнего меню</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Оценка</label>
-                        <select class="form-select" id="rating" required>
-                            <option value="5">5 - Отлично</option>
-                            <option value="4">4 - Хорошо</option>
-                            <option value="3">3 - Средне</option>
-                            <option value="2">2 - Плохо</option>
-                            <option value="1">1 - Ужасно</option>
-                        </select>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-star me-1"></i> Оценка
+                        </label>
+                        <div class="rating-selector">
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="rating" id="rating5" value="5" checked>
+                                <label class="btn btn-outline-warning" for="rating5">
+                                    <i class="bi bi-star-fill"></i> 5
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="rating" id="rating4" value="4">
+                                <label class="btn btn-outline-warning" for="rating4">
+                                    <i class="bi bi-star-fill"></i> 4
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="rating" id="rating3" value="3">
+                                <label class="btn btn-outline-warning" for="rating3">
+                                    <i class="bi bi-star-fill"></i> 3
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="rating" id="rating2" value="2">
+                                <label class="btn btn-outline-warning" for="rating2">
+                                    <i class="bi bi-star-fill"></i> 2
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="rating" id="rating1" value="1">
+                                <label class="btn btn-outline-warning" for="rating1">
+                                    <i class="bi bi-star-fill"></i> 1
+                                </label>
+                            </div>
+                        </div>
+                        <div class="rating-labels d-flex justify-content-between mt-1">
+                            <small class="text-muted">Отлично</small>
+                            <small class="text-muted">Ужасно</small>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Комментарий</label>
-                        <textarea class="form-control" id="comment" rows="3" placeholder="Поделитесь своим опытом..."></textarea>
-                        <div class="form-text">Комментарий обязателен</div>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-chat-left-text me-1"></i> Комментарий
+                        </label>
+                        <textarea class="form-control" id="comment" rows="4" placeholder="Поделитесь своим мнением о блюде..."></textarea>
+                        <div class="form-text">Опишите вкус, качество и свои впечатления</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-send me-2"></i> Отправить отзыв
+                    </button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Мои прошлые отзывы</h5>
-            </div>
-            <div class="card-body">
-                <div id="reviewsLoading" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm"></div>
+    <!-- My Reviews List -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-secondary">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h5 class="mb-0">Мои прошлые отзывы</h5>
                 </div>
-                <div id="reviewsList"></div>
+                <span class="badge bg-secondary" id="reviewCount">0</span>
+            </div>
+            <div class="content-card-body p-0">
+                <div id="reviewsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Загрузка отзывов...</p>
+                </div>
+                <div id="reviewsContent" class="d-none">
+                    <ul class="activity-list" id="reviewsList"></ul>
+                </div>
+                <div id="noReviews" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-chat-square-text"></i>
+                    </div>
+                    <p class="empty-state-text">Отзывов пока нет</p>
+                    <p class="text-muted small mb-0">Будьте первым! Оставьте отзыв о блюде слева</p>
+                </div>
             </div>
         </div>
     </div>
@@ -102,6 +170,14 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const comment = document.getElementById('comment').value.trim();
+        const dishId = document.getElementById('dishSelect').value;
+        const rating = document.querySelector('input[name="rating"]:checked').value;
+        
+        if (!dishId) {
+            showToast('Пожалуйста, выберите блюдо', true);
+            return;
+        }
+        
         if (!comment) {
             showToast('Пожалуйста, напишите комментарий', true);
             return;
@@ -111,8 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await Auth.apiCall('/api/reviews', {
                 method: 'POST',
                 body: JSON.stringify({
-                    dish_id: parseInt(document.getElementById('dishSelect').value),
-                    rating: parseInt(document.getElementById('rating').value),
+                    dish_id: parseInt(dishId),
+                    rating: parseInt(rating),
                     comment: comment
                 })
             });
@@ -121,9 +197,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 document.getElementById('reviewForm').reset();
+                document.getElementById('rating5').checked = true;
                 loadReviews();
-                loadDishes(); // Reload to update dish list
-                showToast('Отзыв отправлен!');
+                loadDishes();
+                showToast('Отзыв успешно отправлен!');
             } else {
                 showToast(data.error || 'Ошибка при отправке отзыва', true);
             }
@@ -141,11 +218,9 @@ async function loadDishes() {
         
         if (response.ok) {
             const data = await response.json();
-            // Получаем уникальные блюда из меню
             const dishes = [];
             const seen = new Set();
             
-            // API возвращает data.menu (единственное число), не data.menus
             if (data.menu && data.menu.items) {
                 data.menu.items.forEach(item => {
                     if (item.dish && !seen.has(item.dish.id)) {
@@ -156,7 +231,7 @@ async function loadDishes() {
             }
             
             select.innerHTML = '<option value="">Выберите блюдо...</option>' +
-                dishes.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                dishes.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
         }
     } catch (error) {
         console.error('Ошибка загрузки блюд:', error);
@@ -165,59 +240,105 @@ async function loadDishes() {
 
 async function loadReviews() {
     const loadingEl = document.getElementById('reviewsLoading');
+    const contentEl = document.getElementById('reviewsContent');
     const listEl = document.getElementById('reviewsList');
+    const noReviewsEl = document.getElementById('noReviews');
+    const countEl = document.getElementById('reviewCount');
     
     try {
         const response = await Auth.apiCall('/api/reviews');
         
         if (response.ok) {
             const data = await response.json();
+            countEl.textContent = data.reviews ? data.reviews.length : 0;
             
             if (data.reviews && data.reviews.length > 0) {
                 listEl.innerHTML = data.reviews.map(r => `
-                    <div class="border-bottom p-2" id="review-${r.id}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>${r.dish?.name || 'Неизвестное блюдо'}</strong>
-                                <span class="text-warning ms-2">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                            </div>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReview(${r.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                    <li class="activity-item" id="review-${r.id}">
+                        <div class="activity-icon ${getRatingColorClass(r.rating)}">
+                            <i class="bi bi-star-fill"></i>
                         </div>
-                        <p class="mb-0 small text-muted">${r.comment || ''}</p>
-                        <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
-                    </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                ${escapeHtml(r.dish?.name || 'Неизвестное блюдо')}
+                                <span class="ms-2">${getStars(r.rating)}</span>
+                            </div>
+                            <div class="activity-time">${escapeHtml(r.comment || '')}</div>
+                            <small class="text-muted">${new Date(r.created_at).toLocaleDateString('ru-RU')}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReview(${r.id})" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </li>
                 `).join('');
+                
+                contentEl.classList.remove('d-none');
+                noReviewsEl.classList.add('d-none');
             } else {
-                listEl.innerHTML = '<p class="text-muted text-center">Отзывов пока нет</p>';
+                contentEl.classList.add('d-none');
+                noReviewsEl.classList.remove('d-none');
             }
             
             loadingEl.classList.add('d-none');
         }
     } catch (error) {
-        listEl.innerHTML = '<p class="text-danger text-center">Ошибка загрузки отзывов</p>';
+        listEl.innerHTML = `
+            <li class="activity-item">
+                <div class="activity-content text-center text-danger w-100">
+                    Ошибка загрузки отзывов
+                </div>
+            </li>
+        `;
+        contentEl.classList.remove('d-none');
         loadingEl.classList.add('d-none');
+        noReviewsEl.classList.add('d-none');
     }
 }
 
 async function deleteReview(reviewId) {
+    if (!confirm('Удалить этот отзыв?')) return;
+    
     try {
         const response = await Auth.apiCall(`/api/reviews/${reviewId}`, {
             method: 'DELETE'
         });
         
         if (response.ok) {
+            const toast = new bootstrap.Toast(document.getElementById('successToast'));
+            document.getElementById('toastMessage').textContent = 'Отзыв удален';
+            toast.show();
             loadReviews();
-            loadDishes(); // Reload to update dish list
-            showToast('Отзыв удалён');
+            loadDishes();
         } else {
             const data = await response.json();
-            showToast(data.error || 'Ошибка при удалении отзыва', true);
+            const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+            document.getElementById('errorToastMessage').textContent = data.error || 'Ошибка при удалении отзыва';
+            toast.show();
         }
     } catch (error) {
-        showToast('Ошибка при удалении отзыва', true);
+        const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+        document.getElementById('errorToastMessage').textContent = 'Ошибка при удалении отзыва';
+        toast.show();
     }
+}
+
+function getStars(rating) {
+    const fullStar = '<i class="bi bi-star-fill text-warning"></i>';
+    const emptyStar = '<i class="bi bi-star text-muted"></i>';
+    return fullStar.repeat(rating) + emptyStar.repeat(5 - rating);
+}
+
+function getRatingColorClass(rating) {
+    if (rating >= 4) return 'success';
+    if (rating === 3) return 'warning';
+    return 'danger';
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 {% endblock %}

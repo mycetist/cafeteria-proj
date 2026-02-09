@@ -6,7 +6,7 @@ from app.extensions import db
 from app.utils.decorators import student_required
 from app.models import (
     User, Dish, Menu, MenuItem, Payment, Subscription,
-    MealRecord, Allergy, Review, Notification
+    MealRecord, Allergy, Review, Notification, DishPurchase
 )
 
 
@@ -244,6 +244,10 @@ def confirm_meal():
     meal_type = data.get('meal_type', 'lunch')
     menu_id = data.get('menu_id')
     
+    # Validate meal_type
+    if meal_type not in ['breakfast', 'lunch']:
+        return jsonify({'error': 'Тип питания должен быть breakfast или lunch'}), 400
+    
     # If menu_id not provided, find today's menu for the meal type
     if not menu_id:
         today = date.today()
@@ -262,17 +266,24 @@ def confirm_meal():
             return jsonify({'error': 'Меню не найдено'}), 404
         meal_type = menu.meal_type
     
-    # Check for existing confirmation today
+    # Check if user already claimed this meal type today (1 breakfast and 1 lunch per day limit)
     today = date.today()
-    existing = MealRecord.query.filter(
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+    
+    existing_meal = MealRecord.query.filter(
         MealRecord.user_id == user_id,
         MealRecord.meal_type == meal_type,
-        db.func.date(MealRecord.received_at) == today,
-        MealRecord.is_confirmed == True
+        MealRecord.is_confirmed == True,
+        MealRecord.received_at >= today_start,
+        MealRecord.received_at <= today_end
     ).first()
     
-    if existing:
-        return jsonify({'error': 'Вы уже подтвердили получение питания сегодня'}), 409
+    if existing_meal:
+        meal_type_ru = 'завтрак' if meal_type == 'breakfast' else 'обед'
+        return jsonify({
+            'error': f'Вы уже получили {meal_type_ru} сегодня. Разрешается только 1 {meal_type_ru} в день.'
+        }), 409
     
     subscription = Subscription.query.filter_by(
         user_id=user_id,
@@ -469,61 +480,8 @@ def delete_review(review_id):
     return jsonify({'message': 'Отзыв удалён'}), 200
 
 
-@student_bp.route('/notifications', methods=['GET'])
-@student_required
-def get_notifications():
-    user_id = get_jwt_identity()
-    
-    unread = Notification.query.filter_by(
-        user_id=user_id,
-        is_read=False
-    ).order_by(Notification.created_at.desc()).all()
-    
-    read = Notification.query.filter_by(
-        user_id=user_id,
-        is_read=True
-    ).order_by(Notification.created_at.desc()).limit(20 - len(unread)).all()
-    
-    notifications = unread + read
-    
-    return jsonify({
-        'notifications': [n.to_dict() for n in notifications],
-        'unread_count': len(unread)
-    }), 200
-
-
-@student_bp.route('/notifications/<int:notification_id>/read', methods=['PUT', 'POST'])
-@student_required
-def mark_notification_read(notification_id):
-    user_id = get_jwt_identity()
-    
-    notification = Notification.query.filter_by(
-        id=notification_id,
-        user_id=user_id
-    ).first()
-    
-    if not notification:
-        return jsonify({'error': 'Уведомление не найдено'}), 404
-    
-    notification.mark_as_read()
-    db.session.commit()
-    
-    return jsonify({'message': 'Уведомление отмечено как прочитанное'}), 200
-
-
-@student_bp.route('/notifications/read-all', methods=['PUT', 'POST'])
-@student_required
-def mark_all_notifications_read():
-    user_id = get_jwt_identity()
-    
-    Notification.query.filter_by(
-        user_id=user_id,
-        is_read=False
-    ).update({'is_read': True})
-    
-    db.session.commit()
-    
-    return jsonify({'message': 'Все уведомления отмечены как прочитанные'}), 200
+# NOTE: Notification endpoints removed - use common endpoints in app/api/common.py
+# These are available to all authenticated users via /api/notifications
 
 
 @student_bp.route('/meals/my', methods=['GET'])
@@ -548,3 +506,367 @@ def get_my_meals():
         meals_data.append(meal_dict)
     
     return jsonify({'meals': meals_data}), 200
+
+
+# ============ WALLET ENDPOINTS ============
+
+@student_bp.route('/wallet', methods=['GET'])
+@student_required
+def get_wallet():
+    """Get user's wallet balance and recent transactions"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    # Get recent transactions (payments and purchases)
+    payments = Payment.query.filter_by(user_id=user_id).order_by(Payment.created_at.desc()).limit(10).all()
+    purchases = DishPurchase.query.filter_by(user_id=user_id).order_by(DishPurchase.purchase_date.desc()).limit(10).all()
+    
+    transactions = []
+    
+    for payment in payments:
+        transactions.append({
+            'id': f'pay_{payment.id}',
+            'type': 'topup' if payment.payment_type == 'topup' else payment.payment_type,
+            'amount': float(payment.amount),
+            'status': payment.status,
+            'date': payment.created_at.isoformat() if payment.created_at else None,
+            'description': 'Пополнение кошелька' if payment.payment_type == 'topup' else 
+                          'Покупка абонемента' if payment.payment_type == 'subscription' else 'Оплата'
+        })
+    
+    for purchase in purchases:
+        dish = Dish.query.get(purchase.dish_id)
+        transactions.append({
+            'id': f'purchase_{purchase.id}',
+            'type': 'dish_purchase',
+            'amount': -float(purchase.price_paid),
+            'status': 'completed',
+            'date': purchase.purchase_date.isoformat() if purchase.purchase_date else None,
+            'description': f'Покупка: {dish.name if dish else "Блюдо"}'
+        })
+    
+    # Sort by date descending
+    transactions.sort(key=lambda x: x['date'] if x['date'] else '', reverse=True)
+    
+    return jsonify({
+        'wallet': {
+            'balance': float(user.balance) if user.balance else 0.00,
+            'user_id': user.id
+        },
+        'transactions': transactions[:20]  # Last 20 transactions
+    }), 200
+
+
+@student_bp.route('/wallet/topup', methods=['POST'])
+@student_required
+def topup_wallet():
+    """Top up user's wallet balance"""
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'Данные не предоставлены'}), 400
+    
+    amount = data.get('amount')
+    if not amount:
+        return jsonify({'error': 'Сумма обязательна'}), 400
+    
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            return jsonify({'error': 'Сумма должна быть положительной'}), 400
+        if amount < 100:
+            return jsonify({'error': 'Минимальная сумма пополнения 100 ₽'}), 400
+        if amount > 50000:
+            return jsonify({'error': 'Максимальная сумма пополнения 50000 ₽'}), 400
+    except ValueError:
+        return jsonify({'error': 'Неверная сумма'}), 400
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    # Add balance to user
+    user.add_balance(amount)
+    
+    # Create payment record for topup
+    payment = Payment(
+        user_id=user_id,
+        amount=amount,
+        payment_type='topup',
+        status='completed',
+        transaction_id=f"TOPUP{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{user_id}"
+    )
+    
+    db.session.add(payment)
+    db.session.commit()
+    
+    # Create notification
+    notification = Notification(
+        user_id=user_id,
+        title='Кошелек пополнен',
+        message=f'Ваш кошелек успешно пополнен на {amount:.2f} ₽. Текущий баланс: {float(user.balance):.2f} ₽'
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Кошелек успешно пополнен',
+        'payment': payment.to_dict(),
+        'new_balance': float(user.balance)
+    }), 201
+
+
+# ============ DISH PURCHASE ENDPOINTS ============
+
+@student_bp.route('/dishes/<int:dish_id>/reviews', methods=['GET'])
+@student_required
+def get_dish_reviews(dish_id):
+    """Get all reviews for a specific dish"""
+    dish = Dish.query.get(dish_id)
+    if not dish:
+        return jsonify({'error': 'Блюдо не найдено'}), 404
+    
+    reviews = Review.query.filter_by(dish_id=dish_id).order_by(Review.created_at.desc()).all()
+    
+    reviews_data = []
+    for review in reviews:
+        review_dict = review.to_dict()
+        user = User.query.get(review.user_id)
+        if user:
+            review_dict['user_name'] = user.full_name
+        reviews_data.append(review_dict)
+    
+    # Calculate average rating
+    avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else None
+    
+    return jsonify({
+        'dish': dish.to_dict(),
+        'reviews': reviews_data,
+        'average_rating': avg_rating,
+        'reviews_count': len(reviews_data)
+    }), 200
+
+
+@student_bp.route('/dishes/<int:dish_id>/purchase', methods=['POST'])
+@student_required
+def purchase_dish(dish_id):
+    """Purchase a specific dish using wallet balance"""
+    user_id = get_jwt_identity()
+    data = request.get_json() or {}
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+    
+    dish = Dish.query.get(dish_id)
+    if not dish:
+        return jsonify({'error': 'Блюдо не найдено'}), 404
+    
+    if not dish.is_available:
+        return jsonify({'error': 'Блюдо временно недоступно'}), 400
+    
+    price = float(dish.price) if dish.price else 0
+    if price <= 0:
+        return jsonify({'error': 'Блюдо не продается'}), 400
+    
+    # Check if user has sufficient balance
+    current_balance = float(user.balance) if user.balance else 0.00
+    if current_balance < price:
+        return jsonify({
+            'error': 'Недостаточно средств на балансе',
+            'required': price,
+            'current_balance': current_balance,
+            'shortage': price - current_balance
+        }), 402  # Payment Required
+    
+    # Get optional menu association
+    menu_id = data.get('menu_id')
+    meal_type = data.get('meal_type', 'lunch')
+    
+    if menu_id:
+        menu = Menu.query.get(menu_id)
+        if not menu:
+            return jsonify({'error': 'Меню не найдено'}), 404
+        meal_type = menu.meal_type
+    
+    # NOTE: Allow multiple purchases of the same dish - no restriction!
+    # Users can buy as many dishes as they want per day
+    
+    # Deduct balance
+    if not user.deduct_balance(price):
+        return jsonify({'error': 'Ошибка при списании средств'}), 500
+    
+    # Create dish purchase record
+    purchase = DishPurchase(
+        user_id=user_id,
+        dish_id=dish_id,
+        menu_id=menu_id,
+        price_paid=price,
+        meal_type=meal_type,
+        is_used=False
+    )
+    
+    db.session.add(purchase)
+    db.session.commit()
+    
+    # Create notification
+    notification = Notification(
+        user_id=user_id,
+        title='Блюдо приобретено',
+        message=f'Вы приобрели "{dish.name}" за {price:.2f} ₽. Текущий баланс: {float(user.balance):.2f} ₽'
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Блюдо успешно приобретено',
+        'purchase': purchase.to_dict(),
+        'dish': dish.to_dict(),
+        'remaining_balance': float(user.balance)
+    }), 201
+
+
+@student_bp.route('/purchases', methods=['GET'])
+@student_required
+def get_my_purchases():
+    """Get current user's dish purchases"""
+    user_id = get_jwt_identity()
+    
+    purchases = DishPurchase.query.filter_by(user_id=user_id).order_by(DishPurchase.purchase_date.desc()).all()
+    
+    purchases_data = []
+    for purchase in purchases:
+        purchase_dict = purchase.to_dict()
+        dish = Dish.query.get(purchase.dish_id)
+        if dish:
+            purchase_dict['dish'] = dish.to_dict()
+        purchases_data.append(purchase_dict)
+    
+    return jsonify({'purchases': purchases_data}), 200
+
+
+@student_bp.route('/purchases/<int:purchase_id>/use', methods=['POST'])
+@student_required
+def use_purchase(purchase_id):
+    """Mark a dish purchase as used (when receiving the meal)"""
+    user_id = get_jwt_identity()
+    
+    purchase = DishPurchase.query.filter_by(id=purchase_id, user_id=user_id).first()
+    if not purchase:
+        return jsonify({'error': 'Покупка не найдена'}), 404
+    
+    if purchase.is_used:
+        return jsonify({'error': 'Это блюдо уже было получено'}), 409
+    
+    meal_type = purchase.meal_type or 'lunch'
+    
+    # Check if user already claimed this meal type today (1 breakfast and 1 lunch per day limit)
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+    
+    existing_meal = MealRecord.query.filter(
+        MealRecord.user_id == user_id,
+        MealRecord.meal_type == meal_type,
+        MealRecord.is_confirmed == True,
+        MealRecord.received_at >= today_start,
+        MealRecord.received_at <= today_end
+    ).first()
+    
+    if existing_meal:
+        meal_type_ru = 'завтрак' if meal_type == 'breakfast' else 'обед'
+        return jsonify({
+            'error': f'Вы уже получили {meal_type_ru} сегодня. Разрешается только 1 {meal_type_ru} в день.'
+        }), 409
+    
+    purchase.mark_as_used()
+    
+    # Create meal record
+    meal_record = MealRecord(
+        user_id=user_id,
+        menu_id=purchase.menu_id,
+        meal_type=meal_type,
+        is_confirmed=True,
+        received_at=datetime.utcnow()
+    )
+    
+    db.session.add(meal_record)
+    db.session.commit()
+    
+    # Create notification
+    dish = Dish.query.get(purchase.dish_id)
+    notification = Notification(
+        user_id=user_id,
+        title='Питание получено',
+        message=f'Вы получили "{dish.name if dish else "блюдо"}"'
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Блюдо отмечено как полученное',
+        'purchase': purchase.to_dict(),
+        'meal_record': meal_record.to_dict()
+    }), 200
+
+
+@student_bp.route('/meals/today-status', methods=['GET'])
+@student_required
+def get_today_meal_status():
+    """Get today's meal claim status for breakfast and lunch"""
+    user_id = get_jwt_identity()
+    
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+    
+    # Get today's confirmed meals
+    today_meals = MealRecord.query.filter(
+        MealRecord.user_id == user_id,
+        MealRecord.is_confirmed == True,
+        MealRecord.received_at >= today_start,
+        MealRecord.received_at <= today_end
+    ).all()
+    
+    breakfast_claimed = any(m.meal_type == 'breakfast' for m in today_meals)
+    lunch_claimed = any(m.meal_type == 'lunch' for m in today_meals)
+    
+    # Get subscription status
+    subscription = Subscription.query.filter_by(
+        user_id=user_id,
+        is_active=True
+    ).first()
+    
+    has_subscription = subscription and subscription.is_valid() and subscription.meals_remaining > 0
+    meals_remaining = subscription.meals_remaining if has_subscription else 0
+    
+    # Get unused purchases for today
+    unused_purchases = DishPurchase.query.filter(
+        DishPurchase.user_id == user_id,
+        DishPurchase.is_used == False
+    ).all()
+    
+    unused_breakfast_purchases = [p for p in unused_purchases if p.meal_type == 'breakfast']
+    unused_lunch_purchases = [p for p in unused_purchases if p.meal_type == 'lunch' or p.meal_type is None]
+    
+    return jsonify({
+        'today': today.isoformat(),
+        'breakfast': {
+            'claimed': breakfast_claimed,
+            'can_claim': not breakfast_claimed and (has_subscription or len(unused_breakfast_purchases) > 0),
+            'has_subscription': has_subscription,
+            'has_purchase': len(unused_breakfast_purchases) > 0
+        },
+        'lunch': {
+            'claimed': lunch_claimed,
+            'can_claim': not lunch_claimed and (has_subscription or len(unused_lunch_purchases) > 0),
+            'has_subscription': has_subscription,
+            'has_purchase': len(unused_lunch_purchases) > 0
+        },
+        'meals_remaining': meals_remaining,
+        'subscription_active': has_subscription
+    }), 200

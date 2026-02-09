@@ -13,8 +13,10 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='student')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    balance = db.Column(db.Numeric(10, 2), default=0.00)
     
     payments = db.relationship('Payment', backref='user', lazy=True, cascade='all, delete-orphan')
+    dish_purchases = db.relationship('DishPurchase', backref='user', lazy=True, cascade='all, delete-orphan')
     subscriptions = db.relationship('Subscription', backref='user', lazy=True, cascade='all, delete-orphan')
     meal_records = db.relationship('MealRecord', backref='user', lazy=True, cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -50,8 +52,22 @@ class User(db.Model):
             'full_name': self.full_name,
             'role': self.role,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'balance': float(self.balance) if self.balance else 0.00
         }
+    
+    def add_balance(self, amount):
+        """Add amount to user's balance"""
+        current = float(self.balance) if self.balance else 0.00
+        self.balance = current + amount
+    
+    def deduct_balance(self, amount):
+        """Deduct amount from user's balance if sufficient"""
+        current = float(self.balance) if self.balance else 0.00
+        if current < amount:
+            return False
+        self.balance = current - amount
+        return True
     
     def __repr__(self):
         return f'<User {self.email} ({self.role})>'

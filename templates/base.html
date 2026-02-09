@@ -93,7 +93,7 @@
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="mb-0 text-muted">
-                        Командный кейс No 2 «Управление столовой»
+                        Кейс No 2 «Управление столовой»
                     </p>
                 </div>
             </div>
@@ -171,9 +171,14 @@
     }
     
     function formatNotificationTime(dateStr) {
+        // Parse the UTC date string and convert to local time
         const date = new Date(dateStr);
         const now = new Date();
-        const diff = now - date;
+        
+        // Ensure we're comparing both times in the same timezone (local)
+        // The dateStr from server is in UTC (e.g., "2026-02-09T16:58:59.106Z")
+        // JavaScript Date constructor automatically converts to local time
+        const diff = now.getTime() - date.getTime();
         
         if (diff < 60000) return 'Только что';
         if (diff < 3600000) return Math.floor(diff / 60000) + ' мин. назад';

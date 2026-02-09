@@ -3,66 +3,130 @@
 {% block title %}Склад - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-box-seam"></i> Склад</h2>
-        <p class="text-muted">Управление запасами ингредиентов</p>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-box-seam text-primary"></i> Склад
+            </h2>
+            <p class="text-muted mb-0">Управление запасами ингредиентов</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <span class="badge bg-warning" id="lowStockBadge">0 с низким запасом</span>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Текущие запасы</h5>
-        <span class="badge bg-warning" id="lowStockBadge">0 с низким запасом</span>
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="bi bi-box"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Всего ингредиентов</div>
+                <div class="stat-value" id="totalItems">-</div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <div id="inventoryLoading" class="text-center py-4">
-            <div class="spinner-border text-primary"></div>
-            <p class="text-muted mt-2">Загрузка данных...</p>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">В норме</div>
+                <div class="stat-value" id="normalStock">-</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Требуют внимания</div>
+                <div class="stat-value" id="lowStockCount">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Content -->
+<div class="content-card">
+    <div class="content-card-header">
+        <div class="d-flex align-items-center">
+            <div class="header-icon">
+                <i class="bi bi-list-ul"></i>
+            </div>
+            <h5 class="mb-0">Текущие запасы</h5>
+        </div>
+    </div>
+    <div class="content-card-body p-0">
+        <div id="inventoryLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="text-muted mt-2 mb-0">Загрузка данных...</p>
         </div>
         <div id="inventoryContent" class="d-none">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Ингредиент</th>
-                        <th>Текущий запас</th>
-                        <th>Мин. требуется</th>
-                        <th>Статус</th>
-                        <th>Действие</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryTable"></tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ингредиент</th>
+                            <th>Текущий запас</th>
+                            <th>Мин. требуется</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="noInventory" class="empty-state d-none">
+            <div class="empty-state-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <p class="empty-state-text">Нет данных о запасах</p>
         </div>
     </div>
 </div>
 
 <!-- Update Stock Modal -->
 <div class="modal fade" id="updateStockModal" tabindex="-1" aria-labelledby="updateStockModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="updateStockModalLabel"><i class="bi bi-pencil"></i> Обновить запас</h5>
+                <h5 class="modal-title" id="updateStockModalLabel">
+                    <i class="bi bi-pencil me-2"></i>Обновить запас
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
                 <form id="updateStockForm">
                     <input type="hidden" id="updateInventoryId" value="">
                     <div class="mb-3">
-                        <label class="form-label">Ингредиент:</label>
-                        <input type="text" class="form-control" id="updateIngredientName" readonly>
+                        <label class="form-label text-muted small">Ингредиент</label>
+                        <input type="text" class="form-control-plaintext" id="updateIngredientName" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Новое количество:</label>
-                        <input type="number" class="form-control" id="updateQuantity" step="0.1" min="0" required>
-                        <small class="text-muted" id="updateUnit"></small>
+                        <label class="form-label">Новое количество</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="updateQuantity" step="0.1" min="0" required>
+                            <span class="input-group-text" id="updateUnit"></span>
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="submitStockUpdate()">
-                    <i class="bi bi-check-lg"></i> Сохранить
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitStockUpdate()">
+                    <i class="bi bi-check-lg me-1"></i>Сохранить
                 </button>
             </div>
         </div>
@@ -93,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadInventory() {
     const loadingEl = document.getElementById('inventoryLoading');
     const contentEl = document.getElementById('inventoryContent');
+    const noInventoryEl = document.getElementById('noInventory');
     const tableEl = document.getElementById('inventoryTable');
     
     try {
@@ -101,6 +166,7 @@ async function loadInventory() {
         if (response.ok) {
             const data = await response.json();
             let lowStockCount = 0;
+            const totalItems = data.inventory?.length || 0;
             
             if (data.inventory && data.inventory.length > 0) {
                 tableEl.innerHTML = data.inventory.map(item => {
@@ -110,18 +176,23 @@ async function loadInventory() {
                     return `
                         <tr class="${isLow ? 'table-warning' : ''}">
                             <td>
-                                <strong>${item.ingredient.name}</strong>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2 ${isLow ? 'text-warning' : 'text-success'}">
+                                        <i class="bi bi-${isLow ? 'exclamation-triangle' : 'check-circle'}"></i>
+                                    </div>
+                                    <strong class="fw-medium">${item.ingredient.name}</strong>
+                                </div>
                             </td>
-                            <td>${item.quantity} ${item.ingredient.unit}</td>
-                            <td>${item.ingredient.min_stock_level} ${item.ingredient.unit}</td>
+                            <td>${item.quantity} <small class="text-muted">${item.ingredient.unit}</small></td>
+                            <td>${item.ingredient.min_stock_level} <small class="text-muted">${item.ingredient.unit}</small></td>
                             <td>
-                                <span class="badge ${isLow ? 'bg-danger' : 'bg-success'}">
+                                <span class="badge ${isLow ? 'bg-warning text-dark' : 'bg-success'}" style="font-size: 0.75rem;">
                                     ${isLow ? 'Мало' : 'Норма'}
                                 </span>
                             </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="openUpdateModal(${item.id}, '${item.ingredient.name}', ${item.quantity}, '${item.ingredient.unit}')">
-                                    <i class="bi bi-pencil"></i> Обновить
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary" onclick="openUpdateModal(${item.id}, '${item.ingredient.name.replace(/'/g, "\\'")}', ${item.quantity}, '${item.ingredient.unit}')">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
                             </td>
                         </tr>
@@ -129,16 +200,21 @@ async function loadInventory() {
                 }).join('');
                 
                 document.getElementById('lowStockBadge').textContent = `${lowStockCount} с низким запасом`;
+                document.getElementById('totalItems').textContent = totalItems;
+                document.getElementById('normalStock').textContent = totalItems - lowStockCount;
+                document.getElementById('lowStockCount').textContent = lowStockCount;
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
             } else {
-                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Нет данных о запасах</td></tr>';
+                loadingEl.classList.add('d-none');
+                noInventoryEl.classList.remove('d-none');
             }
-            
-            loadingEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
         }
     } catch (error) {
         console.error('Error loading inventory:', error);
-        loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+        loadingEl.classList.add('d-none');
+        noInventoryEl.classList.remove('d-none');
     }
 }
 
@@ -146,7 +222,7 @@ function openUpdateModal(inventoryId, ingredientName, currentQty, unit) {
     document.getElementById('updateInventoryId').value = inventoryId;
     document.getElementById('updateIngredientName').value = ingredientName;
     document.getElementById('updateQuantity').value = currentQty;
-    document.getElementById('updateUnit').textContent = 'Единица измерения: ' + unit;
+    document.getElementById('updateUnit').textContent = unit;
     
     const modal = new bootstrap.Modal(document.getElementById('updateStockModal'));
     modal.show();

@@ -3,115 +3,215 @@
 {% block title %}Отслеживание питания - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-check-circle"></i> Отслеживание питания</h2>
-        <p class="text-muted">Отслеживание выдачи питания и подтверждение обедов учеников</p>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-check-circle text-primary"></i> Отслеживание питания
+            </h2>
+            <p class="text-muted mb-0">Отслеживание выдачи питания и подтверждение обедов учеников</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <span class="badge bg-light text-dark border" id="currentDate">
+                <i class="bi bi-calendar3 me-1"></i> --.--.----
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="bi bi-cart"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Ожидают выдачи</div>
+                <div class="stat-value" id="pendingPurchases">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Выдано блюд</div>
+                <div class="stat-value" id="servedPurchases">0</div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Student Search Section -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-search"></i> Поиск ученика</h5>
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5 class="mb-0">Поиск ученика</h5>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="content-card-body">
                 <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="studentSearch" placeholder="Введите имя или ID ученика...">
-                    <button class="btn btn-primary" type="button" onclick="searchStudent()">
-                        <i class="bi bi-search"></i> Найти
+                    <input type="text" class="form-control form-control-sm" id="studentSearch" placeholder="Введите имя или ID...">
+                    <button class="btn btn-primary btn-sm" type="button" onclick="searchStudent()">
+                        <i class="bi bi-search"></i>
                     </button>
                 </div>
                 <div id="studentSearchLoading" class="text-center py-3 d-none">
                     <div class="spinner-border spinner-border-sm text-primary"></div>
-                    <span class="ms-2">Поиск...</span>
+                    <span class="ms-2 text-muted small">Поиск...</span>
                 </div>
-                <div id="studentSearchResults" class="list-group d-none"></div>
+                <div id="studentSearchResults" class="d-none"></div>
+                
+                <!-- Selected Student Card -->
+                <div id="selectedStudentCard" class="mt-3 d-none">
+                    <div class="student-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="student-name" id="studentName">-</div>
+                            <span id="studentSubscription"></span>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">Аллергии:</small>
+                            <div id="studentAllergies" class="mt-1">-</div>
+                        </div>
+                        <hr class="my-2">
+                        <form id="serveMealForm">
+                            <input type="hidden" id="selectedStudentId" value="">
+                            <div class="mb-2">
+                                <small class="text-muted">Тип питания:</small>
+                                <div class="meal-type-selector mt-1">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="serveMealType" id="serveBreakfast" value="breakfast" checked>
+                                        <label class="form-check-label small" for="serveBreakfast">
+                                            <i class="bi bi-sunrise"></i> Завтрак
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="serveMealType" id="serveLunch" value="lunch">
+                                        <label class="form-check-label small" for="serveLunch">
+                                            <i class="bi bi-sun"></i> Обед
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning py-2 small d-none" id="noSubscriptionWarning">
+                                <i class="bi bi-exclamation-triangle"></i> Нет активного абонемента
+                            </div>
+                            <div class="alert alert-danger py-2 small d-none" id="allergyWarning">
+                                <i class="bi bi-exclamation-circle"></i> <span id="allergyWarningText"></span>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm w-100" id="serveMealBtn">
+                                <i class="bi bi-utensils me-1"></i> Выдать питание
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card" id="selectedStudentCard" style="display: none;">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-person"></i> Информация об ученике</h5>
+    <!-- Today's Purchases -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="d-flex align-items-center">
+                    <div class="header-icon header-icon-secondary">
+                        <i class="bi bi-cart-check"></i>
+                    </div>
+                    <h5 class="mb-0">Сегодняшние покупки</h5>
+                </div>
+                <!-- Meal Type Filter -->
+                <div class="meal-type-tabs">
+                    <input type="radio" class="btn-check" name="filterMealType" id="filterAll" value="" autocomplete="off" checked onchange="loadTodayPurchases()">
+                    <label class="btn btn-sm btn-outline-secondary" for="filterAll">Все</label>
+                    
+                    <input type="radio" class="btn-check" name="filterMealType" id="filterBreakfast" value="breakfast" autocomplete="off" onchange="loadTodayPurchases()">
+                    <label class="btn btn-sm btn-outline-secondary" for="filterBreakfast">
+                        <i class="bi bi-sunrise"></i>
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="filterMealType" id="filterLunch" value="lunch" autocomplete="off" onchange="loadTodayPurchases()">
+                    <label class="btn btn-sm btn-outline-secondary" for="filterLunch">
+                        <i class="bi bi-sun"></i>
+                    </label>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <strong>Имя:</strong>
-                        <p id="studentName" class="mb-0">-</p>
-                    </div>
-                    <div class="col-6">
-                        <strong>Абонемент:</strong>
-                        <p id="studentSubscription" class="mb-0">-</p>
+            <div class="content-card-body p-0">
+                <div id="purchasesLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                    <p class="text-muted small mt-2 mb-0">Загрузка...</p>
+                </div>
+                <div id="purchasesContent" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ученик</th>
+                                    <th>Блюдо</th>
+                                    <th>Цена</th>
+                                    <th>Статус</th>
+                                    <th class="text-end">Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchasesTable"></tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <strong>Аллергии:</strong>
-                        <div id="studentAllergies" class="mt-1">-</div>
+                <div id="noPurchases" class="empty-state d-none">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-inbox"></i>
                     </div>
+                    <p class="empty-state-text">Сегодня пока нет покупок</p>
                 </div>
-                <hr>
-                <form id="serveMealForm">
-                    <input type="hidden" id="selectedStudentId" value="">
-                    <div class="mb-3">
-                        <label class="form-label">Тип питания:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="serveMealType" id="serveBreakfast" value="breakfast" checked>
-                            <label class="form-check-label" for="serveBreakfast">
-                                <i class="bi bi-sunrise"></i> Завтрак
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="serveMealType" id="serveLunch" value="lunch">
-                            <label class="form-check-label" for="serveLunch">
-                                <i class="bi bi-sun"></i> Обед
-                            </label>
-                        </div>
-                    </div>
-                    <div class="alert alert-warning d-none" id="noSubscriptionWarning">
-                        <i class="bi bi-exclamation-triangle"></i> У ученика нет активного абонемента!
-                    </div>
-                    <div class="alert alert-danger d-none" id="allergyWarning">
-                        <i class="bi bi-exclamation-circle"></i> <span id="allergyWarningText"></span>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100" id="serveMealBtn">
-                        <i class="bi bi-utensils"></i> Выдать питание
-                    </button>
-                </form>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Today's Meal Distribution -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Сегодняшняя выдача питания</h5>
-        <span class="badge bg-primary" id="totalServed">0 выдано</span>
+<div class="content-card">
+    <div class="content-card-header">
+        <div class="d-flex align-items-center">
+            <div class="header-icon">
+                <i class="bi bi-calendar-day"></i>
+            </div>
+            <h5 class="mb-0">Общая выдача питания</h5>
+        </div>
     </div>
-    <div class="card-body">
+    <div class="content-card-body p-0">
         <div id="trackingLoading" class="text-center py-4">
-            <div class="spinner-border text-primary"></div>
-            <p class="text-muted mt-2">Загрузка данных...</p>
+            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+            <p class="text-muted small mt-2 mb-0">Загрузка...</p>
         </div>
         <div id="trackingContent" class="d-none">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Ученик</th>
-                        <th>Тип питания</th>
-                        <th>Время</th>
-                        <th>Статус</th>
-                        <th>Действие</th>
-                    </tr>
-                </thead>
-                <tbody id="trackingTable"></tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ученик</th>
+                            <th>Тип</th>
+                            <th>Время</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trackingTable"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="noTracking" class="empty-state d-none">
+            <div class="empty-state-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <p class="empty-state-text">Сегодня питание не выдавалось</p>
         </div>
     </div>
 </div>
@@ -134,7 +234,13 @@
 requireRole('cook');
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Set current date
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('currentDate').innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${dateStr}`;
+    
     loadTodayMeals();
+    loadTodayPurchases();
     
     // Student search on Enter key
     document.getElementById('studentSearch').addEventListener('keypress', function(e) {
@@ -163,33 +269,41 @@ async function searchStudent() {
     
     loadingEl.classList.remove('d-none');
     resultsEl.classList.add('d-none');
+    document.getElementById('selectedStudentCard').classList.add('d-none');
     
     try {
         const response = await Auth.apiCall(`/api/cook/meals/search-student?q=${encodeURIComponent(query)}`);
-        
+
         if (response.ok) {
             const data = await response.json();
-            
+
             if (data.students && data.students.length > 0) {
-                resultsEl.innerHTML = data.students.map(s => `
-                    <button type="button" class="list-group-item list-group-item-action" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.has_subscription}, ${JSON.stringify(s.allergies || []).map(a => `'${a}'`).join(',')})">
+                resultsEl.innerHTML = data.students.map(s => {
+                    const allergiesJson = JSON.stringify(s.allergies || []).replace(/"/g, '&quot;');
+                    return `
+                    <button type="button" class="student-search-item" onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', ${s.has_subscription}, '${allergiesJson}')">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>${s.full_name}</strong>
                                 <small class="text-muted d-block">ID: ${s.id}</small>
                             </div>
-                            <span class="badge ${s.has_subscription ? 'bg-success' : 'bg-warning'}">
-                                ${s.has_subscription ? 'Абонемент активен' : 'Нет абонемента'}
+                            <span class="badge ${s.has_subscription ? 'bg-success' : 'bg-warning'}" style="font-size: 0.7rem;">
+                                ${s.has_subscription ? 'Абонемент' : 'Без абонемента'}
                             </span>
                         </div>
                     </button>
-                `).join('');
+                `}).join('');
             } else {
-                resultsEl.innerHTML = '<div class="list-group-item text-muted text-center">Ученики не найдены</div>';
+                resultsEl.innerHTML = '<div class="text-muted text-center py-2 small">Ученики не найдены</div>';
             }
             
             loadingEl.classList.add('d-none');
             resultsEl.classList.remove('d-none');
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Search error:', errorData);
+            loadingEl.classList.add('d-none');
+            showToast('danger', 'Ошибка', errorData.error || 'Ошибка поиска учеников');
         }
     } catch (error) {
         console.error('Error searching students:', error);
@@ -199,21 +313,29 @@ async function searchStudent() {
 }
 
 // Select student for meal serving
-function selectStudent(id, name, hasSubscription, allergies) {
+function selectStudent(id, name, hasSubscription, allergiesJson) {
     document.getElementById('selectedStudentId').value = id;
     document.getElementById('studentName').textContent = name;
-    document.getElementById('studentSubscription').innerHTML = hasSubscription 
-        ? '<span class="badge bg-success">Активен</span>' 
-        : '<span class="badge bg-warning">Нет абонемента</span>';
-    
+    document.getElementById('studentSubscription').innerHTML = hasSubscription
+        ? '<span class="badge bg-success" style="font-size: 0.7rem;">Активен</span>'
+        : '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Нет</span>';
+
+    // Parse allergies from JSON string
+    let allergies = [];
+    try {
+        allergies = JSON.parse(allergiesJson || '[]');
+    } catch (e) {
+        allergies = [];
+    }
+
     // Show allergies
     const allergiesEl = document.getElementById('studentAllergies');
     if (allergies && allergies.length > 0) {
-        allergiesEl.innerHTML = allergies.map(a => `<span class="badge bg-danger me-1">${a}</span>`).join('');
+        allergiesEl.innerHTML = allergies.map(a => `<span class="badge bg-danger me-1" style="font-size: 0.7rem;">${a}</span>`).join('');
         document.getElementById('allergyWarning').classList.remove('d-none');
-        document.getElementById('allergyWarningText').textContent = 'Ученик имеет аллергии: ' + allergies.join(', ');
+        document.getElementById('allergyWarningText').textContent = 'Аллергии: ' + allergies.join(', ');
     } else {
-        allergiesEl.innerHTML = '<span class="text-muted">Нет указанных аллергий</span>';
+        allergiesEl.innerHTML = '<span class="text-muted small">Нет указанных</span>';
         document.getElementById('allergyWarning').classList.add('d-none');
     }
     
@@ -224,8 +346,30 @@ function selectStudent(id, name, hasSubscription, allergies) {
         document.getElementById('noSubscriptionWarning').classList.add('d-none');
     }
     
-    document.getElementById('selectedStudentCard').style.display = 'block';
+    document.getElementById('selectedStudentCard').classList.remove('d-none');
     document.getElementById('studentSearchResults').classList.add('d-none');
+    
+    // Load student purchase details
+    loadStudentPurchases(id);
+}
+
+// Load student purchases
+async function loadStudentPurchases(userId) {
+    try {
+        const response = await Auth.apiCall(`/api/cook/meals/student-purchases/${userId}`);
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Show balance in subscription area
+            if (data.balance > 0) {
+                const balanceBadge = `<span class="badge bg-info ms-1" style="font-size: 0.7rem;">Баланс: ${data.balance.toFixed(0)} ₽</span>`;
+                const currentSub = document.getElementById('studentSubscription').innerHTML;
+                document.getElementById('studentSubscription').innerHTML = currentSub + balanceBadge;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading student purchases:', error);
+    }
 }
 
 // Serve meal to selected student
@@ -240,7 +384,7 @@ async function serveMealToStudent() {
     
     const btn = document.getElementById('serveMealBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Выдача...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Выдача...';
     
     try {
         const response = await Auth.apiCall('/api/cook/meals/serve', {
@@ -252,10 +396,12 @@ async function serveMealToStudent() {
         });
         
         if (response.ok) {
-            showToast('success', 'Успешно', 'Питание успешно выдано ученику');
-            document.getElementById('selectedStudentCard').style.display = 'none';
+            showToast('success', 'Успешно', 'Питание успешно выдано');
+            document.getElementById('selectedStudentCard').classList.add('d-none');
             document.getElementById('studentSearch').value = '';
+            document.getElementById('studentSearchResults').classList.add('d-none');
             loadTodayMeals();
+            loadTodayPurchases();
         } else {
             const data = await response.json();
             showToast('danger', 'Ошибка', data.error || 'Не удалось выдать питание');
@@ -265,7 +411,7 @@ async function serveMealToStudent() {
         showToast('danger', 'Ошибка', 'Ошибка при выдаче питания');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-utensils"></i> Выдать питание';
+        btn.innerHTML = '<i class="bi bi-utensils me-1"></i> Выдать питание';
     }
 }
 
@@ -273,6 +419,7 @@ async function serveMealToStudent() {
 async function loadTodayMeals() {
     const loadingEl = document.getElementById('trackingLoading');
     const contentEl = document.getElementById('trackingContent');
+    const noTrackingEl = document.getElementById('noTracking');
     const tableEl = document.getElementById('trackingTable');
     
     try {
@@ -282,43 +429,48 @@ async function loadTodayMeals() {
             const data = await response.json();
             
             if (data.meals && data.meals.length > 0) {
-                const servedCount = data.meals.filter(m => m.is_confirmed).length;
-                document.getElementById('totalServed').textContent = `${servedCount} выдано`;
-                
                 tableEl.innerHTML = data.meals.map(m => `
                     <tr>
-                        <td>${m.user?.full_name || 'Неизвестно'}</td>
                         <td>
-                            <span class="badge ${m.meal_type === 'breakfast' ? 'bg-warning' : 'bg-info'}">
+                            <div class="fw-medium">${m.user?.full_name || 'Неизвестно'}</div>
+                        </td>
+                        <td>
+                            <span class="badge ${m.meal_type === 'breakfast' ? 'bg-warning text-dark' : 'bg-info'}" style="font-size: 0.7rem;">
                                 ${m.meal_type === 'breakfast' ? 'Завтрак' : 'Обед'}
                             </span>
                         </td>
-                        <td>${m.received_at ? new Date(m.received_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                        <td class="small text-muted">${m.received_at ? new Date(m.received_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                         <td>
-                            <span class="badge ${m.is_confirmed ? 'bg-success' : 'bg-warning'}">
+                            <span class="badge ${m.is_confirmed ? 'bg-success' : 'bg-warning'}" style="font-size: 0.7rem;">
                                 ${m.is_confirmed ? 'Выдано' : 'Ожидает'}
                             </span>
                         </td>
-                        <td>
+                        <td class="text-end">
                             ${!m.is_confirmed ? `
                                 <button class="btn btn-sm btn-primary" onclick="markServed(${m.id})">
-                                    <i class="bi bi-check"></i> Отметить выданным
+                                    <i class="bi bi-check"></i>
                                 </button>
-                            ` : '<span class="text-success"><i class="bi bi-check-circle"></i></span>'}
+                            ` : '<i class="bi bi-check-circle-fill text-success"></i>'}
                         </td>
                     </tr>
                 `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
             } else {
-                document.getElementById('totalServed').textContent = '0 выдано';
-                tableEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Сегодня питание не выдавалось</td></tr>';
+                loadingEl.classList.add('d-none');
+                noTrackingEl.classList.remove('d-none');
             }
-            
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Meals load error:', errorData);
             loadingEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
+            noTrackingEl.classList.remove('d-none');
         }
     } catch (error) {
         console.error('Error loading meals:', error);
-        loadingEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+        loadingEl.classList.add('d-none');
+        noTrackingEl.classList.remove('d-none');
     }
 }
 
@@ -342,6 +494,100 @@ async function markServed(mealId) {
     }
 }
 
+// Load today's purchases
+async function loadTodayPurchases() {
+    const loadingEl = document.getElementById('purchasesLoading');
+    const contentEl = document.getElementById('purchasesContent');
+    const noPurchasesEl = document.getElementById('noPurchases');
+    const tableEl = document.getElementById('purchasesTable');
+    
+    const filterMealType = document.querySelector('input[name="filterMealType"]:checked')?.value || '';
+    
+    loadingEl.classList.remove('d-none');
+    contentEl.classList.add('d-none');
+    noPurchasesEl.classList.add('d-none');
+    
+    try {
+        const url = filterMealType 
+            ? `/api/cook/meals/purchases?meal_type=${filterMealType}`
+            : '/api/cook/meals/purchases';
+        const response = await Auth.apiCall(url);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Update counters
+            document.getElementById('pendingPurchases').textContent = data.pending_count || 0;
+            document.getElementById('servedPurchases').textContent = data.used_count || 0;
+            
+            if (data.purchases && data.purchases.length > 0) {
+                tableEl.innerHTML = data.purchases.map(p => `
+                    <tr class="${p.is_used ? 'table-success' : ''}">
+                        <td>
+                            <div class="fw-medium">${p.user?.full_name || 'Неизвестно'}</div>
+                            <small class="text-muted">ID: ${p.user_id}</small>
+                        </td>
+                        <td>
+                            <div class="fw-medium">${p.dish?.name || 'Блюдо'}</div>
+                            <small class="text-muted">${p.dish?.category || ''}</small>
+                        </td>
+                        <td class="fw-medium">${p.price_paid?.toFixed(0) || '-'} ₽</td>
+                        <td>
+                            <span class="badge ${p.is_used ? 'bg-success' : 'bg-warning'}" style="font-size: 0.7rem;">
+                                ${p.is_used ? 'Выдано' : 'Ожидает'}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            ${!p.is_used ? `
+                                <button class="btn btn-sm btn-success" onclick="servePurchase(${p.id})">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                            ` : '<i class="bi bi-check-circle-fill text-success"></i>'}
+                        </td>
+                    </tr>
+                `).join('');
+                
+                loadingEl.classList.add('d-none');
+                contentEl.classList.remove('d-none');
+            } else {
+                loadingEl.classList.add('d-none');
+                noPurchasesEl.classList.remove('d-none');
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Purchases load error:', errorData);
+            loadingEl.classList.add('d-none');
+            noPurchasesEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error loading purchases:', error);
+        loadingEl.classList.add('d-none');
+        noPurchasesEl.classList.remove('d-none');
+    }
+}
+
+// Serve a purchased dish
+async function servePurchase(purchaseId) {
+    try {
+        const response = await Auth.apiCall('/api/cook/meals/serve-purchase', {
+            method: 'POST',
+            body: JSON.stringify({ purchase_id: purchaseId })
+        });
+        
+        if (response.ok) {
+            showToast('success', 'Успешно', 'Блюдо выдано ученику');
+            loadTodayPurchases();
+            loadTodayMeals();
+        } else {
+            const data = await response.json();
+            showToast('danger', 'Ошибка', data.error || 'Не удалось выдать блюдо');
+        }
+    } catch (error) {
+        console.error('Error serving purchase:', error);
+        showToast('danger', 'Ошибка', 'Ошибка при выдаче блюда');
+    }
+}
+
 // Show toast notification
 function showToast(type, title, message) {
     const toastEl = document.getElementById('mealToast');
@@ -359,4 +605,56 @@ function showToast(type, title, message) {
     toast.show();
 }
 </script>
+
+<style>
+.meal-type-tabs {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.meal-type-tabs .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.student-search-item {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.student-search-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.student-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.meal-type-selector {
+    display: flex;
+    gap: 1rem;
+}
+
+.meal-type-selector .form-check-label {
+    cursor: pointer;
+}
+</style>
 {% endblock %}

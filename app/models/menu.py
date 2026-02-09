@@ -13,6 +13,7 @@ class Menu(db.Model):
     
     menu_items = db.relationship('MenuItem', backref='menu', lazy=True, cascade='all, delete-orphan')
     meal_records = db.relationship('MealRecord', backref='menu', lazy=True, cascade='all, delete-orphan')
+    dish_purchases = db.relationship('DishPurchase', backref='menu', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (
         db.UniqueConstraint('menu_date', 'meal_type', name='unique_date_meal_type'),

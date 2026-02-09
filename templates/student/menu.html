@@ -3,6 +3,49 @@
 {% block title %}Меню - Школьная столовая{% endblock %}
 
 {% block content %}
+<!-- Toast container for notifications -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong class="me-auto">Успешно</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">Операция успешна!</div>
+    </div>
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong class="me-auto">Ошибка</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="errorToastMessage">Произошла ошибка!</div>
+    </div>
+</div>
+
+<!-- Reviews Modal -->
+<div class="modal fade" id="reviewsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewsModalTitle">Отзывы о блюде</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reviewsModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="buyFromReviewsBtn">Купить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Page Header -->
 <div class="dashboard-header mb-3">
     <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -10,7 +53,34 @@
             <h2 class="mb-1">
                 <i class="bi bi-menu-button-wide text-primary"></i> Меню
             </h2>
-            <p class="text-muted mb-0">Посмотрите ежедневное меню и варианты блюд</p>
+            <p class="text-muted mb-0">Посмотрите меню, прочитайте отзывы и покупайте блюда</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success fs-6" id="walletBadge">
+                    <i class="bi bi-wallet2 me-1"></i> <span id="walletBalance">Загрузка...</span>
+                </span>
+                <a href="/student/dashboard" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Назад
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meal Type Selector -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="meal-type-selector" role="group">
+            <input type="radio" class="btn-check" name="mealType" id="breakfastBtn" value="breakfast" autocomplete="off">
+            <label class="meal-type-btn" for="breakfastBtn">
+                <i class="bi bi-sunrise"></i> Завтрак
+            </label>
+            
+            <input type="radio" class="btn-check" name="mealType" id="lunchBtn" value="lunch" autocomplete="off" checked>
+            <label class="meal-type-btn" for="lunchBtn">
+                <i class="bi bi-sun"></i> Обед
+            </label>
         </div>
     </div>
 </div>
@@ -32,10 +102,10 @@
                     </button>
                 </div>
                 <div class="date-quick-select">
-                    <button type="button" class="date-quick-btn" id="todayBtn">Сегодня</button>
-                    <button type="button" class="date-quick-btn" id="tomorrowBtn">Завтра</button>
                     <input type="date" class="date-picker-hidden" id="menuDate">
-                    <button type="button" class="date-quick-btn" id="customDateBtn">Выбрать дату</button>
+                    <button type="button" class="date-quick-btn" id="customDateBtn">
+                        <i class="bi bi-calendar3"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -66,19 +136,47 @@
 {% block extra_js %}
 <script>
 let currentDate = new Date();
+let currentMealType = 'lunch';
+let currentMenuData = null;
+let currentDishForPurchase = null;
+
+// Helper function to show toast notifications
+function showToast(message, isError = false) {
+    const toastId = isError ? 'errorToast' : 'successToast';
+    const messageId = isError ? 'errorToastMessage' : 'toastMessage';
+    document.getElementById(messageId).textContent = message;
+    const toast = new bootstrap.Toast(document.getElementById(toastId));
+    toast.show();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('menuDate');
     const prevBtn = document.getElementById('prevDay');
     const nextBtn = document.getElementById('nextDay');
-    const todayBtn = document.getElementById('todayBtn');
-    const tomorrowBtn = document.getElementById('tomorrowBtn');
     const customDateBtn = document.getElementById('customDateBtn');
+    const breakfastBtn = document.getElementById('breakfastBtn');
+    const lunchBtn = document.getElementById('lunchBtn');
     
     // Set initial date to today
     currentDate = new Date();
     updateDateDisplay();
     loadMenu(formatDate(currentDate));
+    loadWallet();
+    
+    // Meal type selection
+    breakfastBtn.addEventListener('change', function() {
+        if (this.checked) {
+            currentMealType = 'breakfast';
+            loadMenu(formatDate(currentDate));
+        }
+    });
+    
+    lunchBtn.addEventListener('change', function() {
+        if (this.checked) {
+            currentMealType = 'lunch';
+            loadMenu(formatDate(currentDate));
+        }
+    });
     
     // Navigation buttons
     prevBtn.addEventListener('click', function() {
@@ -93,20 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadMenu(formatDate(currentDate));
     });
     
-    // Quick select buttons
-    todayBtn.addEventListener('click', function() {
-        currentDate = new Date();
-        updateDateDisplay();
-        loadMenu(formatDate(currentDate));
-    });
-    
-    tomorrowBtn.addEventListener('click', function() {
-        currentDate = new Date();
-        currentDate.setDate(currentDate.getDate() + 1);
-        updateDateDisplay();
-        loadMenu(formatDate(currentDate));
-    });
-    
     // Custom date picker
     customDateBtn.addEventListener('click', function() {
         dateInput.showPicker();
@@ -116,6 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDate = new Date(this.value + 'T00:00:00');
         updateDateDisplay();
         loadMenu(this.value);
+    });
+    
+    // Buy from reviews modal
+    document.getElementById('buyFromReviewsBtn').addEventListener('click', function() {
+        if (currentDishForPurchase) {
+            purchaseDish(currentDishForPurchase.dishId, currentDishForPurchase.menuId);
+            bootstrap.Modal.getInstance(document.getElementById('reviewsModal')).hide();
+        }
     });
 });
 
@@ -153,6 +245,25 @@ function updateDateDisplay() {
     dateInput.value = formatDate(currentDate);
 }
 
+async function loadWallet() {
+    const balanceEl = document.getElementById('walletBalance');
+    
+    try {
+        const response = await Auth.apiCall('/api/wallet');
+        
+        if (response.ok) {
+            const data = await response.json();
+            const balance = data.wallet ? data.wallet.balance : 0;
+            balanceEl.textContent = balance.toFixed(2) + ' ₽';
+        } else {
+            balanceEl.textContent = '0 ₽';
+        }
+    } catch (error) {
+        console.error('Error loading wallet:', error);
+        balanceEl.textContent = '0 ₽';
+    }
+}
+
 async function loadMenu(date) {
     const loadingEl = document.getElementById('menuLoading');
     const contentEl = document.getElementById('menuContent');
@@ -164,10 +275,11 @@ async function loadMenu(date) {
     noMenuEl.classList.add('d-none');
     
     try {
-        const response = await Auth.apiCall(`/api/menu/${date}`);
+        const response = await Auth.apiCall(`/api/menu/${date}?meal_type=${currentMealType}`);
         
         if (response.ok) {
             const data = await response.json();
+            currentMenuData = data;
             
             if (data.menu && data.menu.items && data.menu.items.length > 0) {
                 // Render all items in a single grid
@@ -176,9 +288,25 @@ async function loadMenu(date) {
                         <div class="menu-dish-content">
                             <div class="menu-dish-name">${item.dish.name}</div>
                             ${item.dish.description ? `<div class="menu-dish-description">${item.dish.description}</div>` : ''}
+                            <div class="mt-2">
+                                ${item.dish.average_rating ? `
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-star-fill"></i> ${item.dish.average_rating.toFixed(1)}
+                                    </span>
+                                    <span class="text-muted small">(${item.dish.reviews_count} отзывов)</span>
+                                ` : '<span class="text-muted small">Нет отзывов</span>'}
+                            </div>
                         </div>
                         <div class="menu-dish-footer">
                             <div class="menu-dish-price">${item.dish.price} ₽</div>
+                            <div class="menu-dish-actions">
+                                <button class="btn btn-buy btn-sm" onclick="purchaseDish(${item.dish.id}, ${data.menu.id})">
+                                    <i class="bi bi-cart-plus"></i> Купить
+                                </button>
+                                <button class="btn btn-reviews btn-sm" onclick="showReviews(${item.dish.id}, ${data.menu.id}, '${item.dish.name}', ${item.dish.price})">
+                                    <i class="bi bi-eye"></i> Отзывы
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -199,5 +327,105 @@ async function loadMenu(date) {
     }
 }
 
+async function showReviews(dishId, menuId, dishName, dishPrice) {
+    currentDishForPurchase = { dishId, menuId, dishName, dishPrice };
+    
+    const modalTitle = document.getElementById('reviewsModalTitle');
+    const modalBody = document.getElementById('reviewsModalBody');
+    
+    modalTitle.textContent = `Отзывы: ${dishName}`;
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('reviewsModal'));
+    modal.show();
+    
+    try {
+        const response = await Auth.apiCall(`/api/dishes/${dishId}/reviews`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            let reviewsHtml = '';
+            
+            if (data.average_rating) {
+                reviewsHtml += `
+                    <div class="text-center mb-3">
+                        <h4>Средняя оценка: ${data.average_rating.toFixed(1)} / 5</h4>
+                        <p class="text-muted">${data.reviews_count} отзывов</p>
+                    </div>
+                `;
+            }
+            
+            if (data.reviews && data.reviews.length > 0) {
+                reviewsHtml += '<div class="list-group">';
+                reviewsHtml += data.reviews.map(review => `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="mb-1">
+                                    ${Array(review.rating).fill('<i class="bi bi-star-fill text-warning"></i>').join('')}
+                                </div>
+                                <p class="mb-1">${review.comment || 'Без комментария'}</p>
+                                <small class="text-muted">${review.user_name || 'Пользователь'} - ${new Date(review.created_at).toLocaleDateString('ru-RU')}</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                reviewsHtml += '</div>';
+            } else {
+                reviewsHtml += '<p class="text-muted text-center">Пока нет отзывов</p>';
+            }
+            
+            reviewsHtml += `
+                <div class="alert alert-info mt-3">
+                    <strong>Цена: ${dishPrice} ₽</strong>
+                </div>
+            `;
+            
+            modalBody.innerHTML = reviewsHtml;
+        } else {
+            modalBody.innerHTML = '<p class="text-danger">Ошибка загрузки отзывов</p>';
+        }
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+        modalBody.innerHTML = '<p class="text-danger">Ошибка загрузки отзывов</p>';
+    }
+}
+
+async function purchaseDish(dishId, menuId) {
+    console.log('Purchase clicked:', { dishId, menuId, currentMealType });
+    
+    try {
+        const response = await Auth.apiCall(`/api/dishes/${dishId}/purchase`, {
+            method: 'POST',
+            body: JSON.stringify({ 
+                menu_id: menuId,
+                meal_type: currentMealType
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Purchase response:', { status: response.status, data });
+        
+        if (response.ok) {
+            showToast(`Блюдо приобретено! Остаток: ${data.remaining_balance.toFixed(2)} ₽`);
+            loadWallet();
+            // Don't reload menu - allow buying more dishes
+        } else if (response.status === 402) {
+            showToast(`Недостаточно средств. Не хватает: ${data.shortage.toFixed(2)} ₽`, true);
+        } else {
+            showToast(data.error || 'Ошибка при покупке', true);
+        }
+    } catch (error) {
+        console.error('Error purchasing dish:', error);
+        showToast('Ошибка сети. Попробуйте снова.', true);
+    }
+}
 </script>
 {% endblock %}
