@@ -48,7 +48,6 @@ async function loadRecentActivity() {
             throw new Error('Failed to load activity');
         }
     } catch (error) {
-        console.error('Error loading activity:', error);
         loadingEl.classList.add('d-none');
         noActivityEl.classList.remove('d-none');
     }
@@ -74,6 +73,29 @@ async function loadDashboardData() {
     } catch (error) {
         console.error('Error loading subscription:', error);
         document.getElementById('subscriptionStatus').textContent = 'Ошибка';
+    }
+    
+    // Load wallet balance
+    try {
+        console.log('Loading wallet balance...');
+        const walletResponse = await Auth.apiCall('/api/wallet');
+        console.log('Wallet API response status:', walletResponse.status);
+        
+        if (walletResponse.ok) {
+            const walletData = await walletResponse.json();
+            console.log('Wallet data:', walletData);
+            const balance = walletData.wallet ? walletData.wallet.balance : 0;
+            console.log('Parsed balance:', balance);
+            document.getElementById('balance').textContent = balance.toFixed(2) + ' ₽';
+        } else {
+            console.error('Wallet API failed with status:', walletResponse.status);
+            const errorText = await walletResponse.text();
+            console.error('Error response:', errorText);
+            document.getElementById('balance').textContent = '0.00 ₽';
+        }
+    } catch (error) {
+        console.error('Error loading wallet:', error);
+        document.getElementById('balance').textContent = '0.00 ₽';
     }
 }
 

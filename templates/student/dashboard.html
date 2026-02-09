@@ -62,7 +62,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">Баланс</div>
-                <div class="stat-value" id="balance">0 ₽</div>
+                <div class="stat-value" id="balance">Загрузка...</div>
             </div>
         </div>
     </div>
@@ -275,7 +275,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+<script src="{{ url_for('static', filename='js/student.js') }}?v=20260209184800"></script>
 <script>
 // Load dashboard data when page loads
 document.addEventListener('DOMContentLoaded', function() {
