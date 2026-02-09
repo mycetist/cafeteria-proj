@@ -24,14 +24,15 @@ async function loadRecentActivity() {
                     const date = new Date(meal.received_at).toLocaleDateString('ru-RU');
                     const time = new Date(meal.received_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                     const statusText = meal.is_confirmed ? 'Получен' : 'Ожидает';
+                    const statusClass = meal.is_confirmed ? 'success' : 'warning';
                     return `
-                        <li class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${meal.dish_name || 'Блюдо'}</h6>
-                                    <small class="text-muted">${date} ${time}</small>
-                                </div>
-                                <span class="badge bg-success">${statusText}</span>
+                        <li class="activity-item">
+                            <div class="activity-icon ${statusClass}">
+                                <i class="bi ${meal.is_confirmed ? 'bi-check-lg' : 'bi-clock'}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">${meal.dish_name || 'Блюдо'}</div>
+                                <div class="activity-time">${date} ${time} · ${statusText}</div>
                             </div>
                         </li>
                     `;
@@ -95,15 +96,13 @@ async function loadTodayMenu() {
             if (data.menu && data.menu.items && data.menu.items.length > 0) {
                 document.getElementById('todayMenu').textContent = data.menu.items.length + ' блюд';
                 
-                menuItemsEl.innerHTML = data.menu.items.slice(0, 4).map(item => `
-                    <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center p-2 border rounded">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${item.dish.name}</h6>
-                                <small class="text-muted">${item.dish.category}</small>
-                            </div>
-                            <span class="badge bg-primary">${item.dish.price} &#8381;</span>
+                menuItemsEl.innerHTML = data.menu.items.map(item => `
+                    <div class="menu-item-card">
+                        <div class="menu-item-info">
+                            <div class="menu-item-name">${item.dish.name}</div>
+                            <div class="menu-item-type">${item.dish.category}</div>
                         </div>
+                        <div class="menu-item-price">${item.dish.price} &#8381;</div>
                     </div>
                 `).join('');
                 

@@ -3,52 +3,182 @@
 {% block title %}Меню - Школьная столовая{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2><i class="bi bi-menu-button-wide"></i> Меню</h2>
-        <p class="text-muted">Посмотрите ежедневное меню и варианты блюд</p>
+<!-- Page Header -->
+<div class="dashboard-header mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-menu-button-wide text-primary"></i> Меню
+            </h2>
+            <p class="text-muted mb-0">Посмотрите ежедневное меню и варианты блюд</p>
+        </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <label for="menuDate" class="form-label">Выберите дату</label>
-        <input type="date" class="form-control" id="menuDate">
+<!-- Date Selection Card -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="date-selector-card">
+            <div class="date-selector-content">
+                <div class="date-nav">
+                    <button type="button" class="date-nav-btn" id="prevDay" title="Предыдущий день">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="date-display" id="dateDisplay">
+                        <span id="dateText">Загрузка...</span>
+                    </div>
+                    <button type="button" class="date-nav-btn" id="nextDay" title="Следующий день">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="date-quick-select">
+                    <button type="button" class="date-quick-btn" id="todayBtn">Сегодня</button>
+                    <button type="button" class="date-quick-btn" id="tomorrowBtn">Завтра</button>
+                    <input type="date" class="date-picker-hidden" id="menuDate">
+                    <button type="button" class="date-quick-btn" id="customDateBtn">Выбрать дату</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="menuLoading" class="text-center py-5">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2">Загрузка меню...</p>
-</div>
-
-<div id="menuContent" class="d-none">
-    <div class="row" id="menuItems"></div>
-</div>
-
-<div id="noMenu" class="alert alert-info d-none">
-    <i class="bi bi-info-circle"></i> На эту дату меню недоступно.
+<!-- Menu Content -->
+<div class="content-card">
+    <div class="content-card-header">
+        <div class="d-flex align-items-center">
+            <div class="header-icon">
+                <i class="bi bi-egg-fried"></i>
+            </div>
+            <h5 class="mb-0">Блюда на день</h5>
+        </div>
+        <span class="badge bg-light text-dark border" id="menuDateBadge">
+            <i class="bi bi-calendar3 me-1"></i> --
+        </span>
+    </div>
+    <div class="content-card-body">
+        <div id="menuLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="text-muted mt-2 mb-0">Загрузка меню...</p>
+        </div>
+        <div id="menuContent" class="d-none">
+            <div class="menu-category-section" id="menuCategories"></div>
+        </div>
+        <div id="noMenu" class="empty-state d-none">
+            <div class="empty-state-icon">
+                <i class="bi bi-calendar-x"></i>
+            </div>
+            <p class="empty-state-text">На эту дату меню недоступно</p>
+            <p class="text-muted small mt-2">Попробуйте выбрать другую дату</p>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+let currentDate = new Date();
+
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('menuDate');
-    dateInput.value = new Date().toISOString().split('T')[0];
+    const prevBtn = document.getElementById('prevDay');
+    const nextBtn = document.getElementById('nextDay');
+    const todayBtn = document.getElementById('todayBtn');
+    const tomorrowBtn = document.getElementById('tomorrowBtn');
+    const customDateBtn = document.getElementById('customDateBtn');
     
-    loadMenu(dateInput.value);
+    // Set initial date to today
+    currentDate = new Date();
+    updateDateDisplay();
+    loadMenu(formatDate(currentDate));
+    
+    // Navigation buttons
+    prevBtn.addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() - 1);
+        updateDateDisplay();
+        loadMenu(formatDate(currentDate));
+    });
+    
+    nextBtn.addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateDisplay();
+        loadMenu(formatDate(currentDate));
+    });
+    
+    // Quick select buttons
+    todayBtn.addEventListener('click', function() {
+        currentDate = new Date();
+        updateDateDisplay();
+        loadMenu(formatDate(currentDate));
+    });
+    
+    tomorrowBtn.addEventListener('click', function() {
+        currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateDisplay();
+        loadMenu(formatDate(currentDate));
+    });
+    
+    // Custom date picker
+    customDateBtn.addEventListener('click', function() {
+        dateInput.showPicker();
+    });
     
     dateInput.addEventListener('change', function() {
+        currentDate = new Date(this.value + 'T00:00:00');
+        updateDateDisplay();
         loadMenu(this.value);
     });
 });
+
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+function updateDateDisplay() {
+    const dateTextEl = document.getElementById('dateText');
+    const dateBadgeEl = document.getElementById('menuDateBadge');
+    const dateInput = document.getElementById('menuDate');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(currentDate);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    let displayText;
+    const diffDays = Math.round((compareDate - today) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        displayText = 'Сегодня';
+    } else if (diffDays === 1) {
+        displayText = 'Завтра';
+    } else if (diffDays === -1) {
+        displayText = 'Вчера';
+    } else {
+        displayText = currentDate.toLocaleDateString('ru-RU', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'long' 
+        });
+    }
+    
+    const shortDate = currentDate.toLocaleDateString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+    });
+    
+    dateTextEl.textContent = displayText;
+    dateBadgeEl.innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${shortDate}`;
+    dateInput.value = formatDate(currentDate);
+}
 
 async function loadMenu(date) {
     const loadingEl = document.getElementById('menuLoading');
     const contentEl = document.getElementById('menuContent');
     const noMenuEl = document.getElementById('noMenu');
-    const menuItemsEl = document.getElementById('menuItems');
+    const categoriesEl = document.getElementById('menuCategories');
     
     loadingEl.classList.remove('d-none');
     contentEl.classList.add('d-none');
@@ -61,20 +191,44 @@ async function loadMenu(date) {
             const data = await response.json();
             
             if (data.menu && data.menu.items && data.menu.items.length > 0) {
-                menuItemsEl.innerHTML = data.menu.items.map(item => `
-                    <div class="col-md-4 mb-4">
-                        <div class="card menu-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h5 class="card-title mb-0">${item.dish.name}</h5>
-                                    <span class="badge bg-primary">${item.dish.price} ₽</span>
-                                </div>
-                                <p class="card-text text-muted small">${item.dish.description || ''}</p>
-                                <span class="badge bg-secondary">${item.dish.category}</span>
+                // Group items by category
+                const categories = {};
+                data.menu.items.forEach(item => {
+                    const category = item.dish.category || 'Другое';
+                    if (!categories[category]) {
+                        categories[category] = [];
+                    }
+                    categories[category].push(item);
+                });
+                
+                // Render categories
+                categoriesEl.innerHTML = Object.entries(categories).map(([category, items]) => {
+                    const categoryIcon = getCategoryIcon(category);
+                    const categoryRu = translateCategory(category);
+                    return `
+                        <div class="menu-category">
+                            <div class="menu-category-header">
+                                <h6 class="mb-0">
+                                    <i class="${categoryIcon} me-2"></i>${categoryRu}
+                                </h6>
+                                <span class="category-count">${items.length} ${getItemsWord(items.length)}</span>
+                            </div>
+                            <div class="menu-cards-grid">
+                                ${items.map(item => `
+                                    <div class="menu-dish-card">
+                                        <div class="menu-dish-content">
+                                            <div class="menu-dish-name">${item.dish.name}</div>
+                                            ${item.dish.description ? `<div class="menu-dish-description">${item.dish.description}</div>` : ''}
+                                        </div>
+                                        <div class="menu-dish-footer">
+                                            <div class="menu-dish-price">${item.dish.price} ₽</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 loadingEl.classList.add('d-none');
                 contentEl.classList.remove('d-none');
@@ -90,6 +244,58 @@ async function loadMenu(date) {
         loadingEl.classList.add('d-none');
         noMenuEl.classList.remove('d-none');
     }
+}
+
+function getItemsWord(count) {
+    const lastTwo = count % 100;
+    const lastOne = count % 10;
+    
+    if (lastTwo >= 11 && lastTwo <= 19) {
+        return 'блюд';
+    }
+    if (lastOne === 1) {
+        return 'блюдо';
+    }
+    if (lastOne >= 2 && lastOne <= 4) {
+        return 'блюда';
+    }
+    return 'блюд';
+}
+
+function translateCategory(category) {
+    const translations = {
+        'SALAD': 'Салаты',
+        'SOUP': 'Супы',
+        'MAIN': 'Горячее',
+        'SIDE': 'Гарниры',
+        'DRINK': 'Напитки',
+        'DESSERT': 'Десерты',
+        'BREAKFAST': 'Завтраки',
+        'SNACK': 'Закуски',
+        'FRUIT': 'Фрукты',
+        'BAKERY': 'Выпечка',
+        'OTHER': 'Другое',
+        'Другое': 'Другое'
+    };
+    return translations[category] || category;
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        'SALAD': 'bi bi-egg-fried',
+        'SOUP': 'bi bi-cup-hot',
+        'MAIN': 'bi bi-fire',
+        'SIDE': 'bi bi-egg',
+        'DRINK': 'bi bi-cup-straw',
+        'DESSERT': 'bi bi-cake2',
+        'BREAKFAST': 'bi bi-sun',
+        'SNACK': 'bi bi-cookie',
+        'FRUIT': 'bi bi-apple',
+        'BAKERY': 'bi bi-basket2',
+        'OTHER': 'bi bi-three-dots',
+        'Другое': 'bi bi-three-dots'
+    };
+    return icons[category] || 'bi bi-fork-knife';
 }
 </script>
 {% endblock %}
