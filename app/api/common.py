@@ -256,10 +256,11 @@ def get_notifications():
         is_read=False
     ).order_by(Notification.created_at.desc()).all()
     
+    read_limit = max(0, 20 - len(unread))
     read = Notification.query.filter_by(
         user_id=user_id,
         is_read=True
-    ).order_by(Notification.created_at.desc()).limit(20 - len(unread)).all()
+    ).order_by(Notification.created_at.desc()).limit(read_limit).all()
     
     notifications = unread + read
     

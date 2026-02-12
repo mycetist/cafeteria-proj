@@ -303,13 +303,13 @@ async function loadMenu(date) {
                             </div>
                         </div>
                         <div class="menu-dish-footer">
-                            <div class="menu-dish-price">${item.dish.price} ₽</div>
+                            <button class="btn btn-reviews btn-sm" onclick="showReviews(${item.dish.id}, ${data.menu.id}, '${item.dish.name}', ${item.dish.price})">
+                                <i class="bi bi-eye"></i> Отзывы
+                            </button>
                             <div class="menu-dish-actions">
+                                <div class="menu-dish-price">${item.dish.price} ₽</div>
                                 <button class="btn btn-buy btn-sm" onclick="purchaseDish(${item.dish.id}, ${data.menu.id})">
                                     <i class="bi bi-cart-plus"></i> Купить
-                                </button>
-                                <button class="btn btn-reviews btn-sm" onclick="showReviews(${item.dish.id}, ${data.menu.id}, '${item.dish.name}', ${item.dish.price})">
-                                    <i class="bi bi-eye"></i> Отзывы
                                 </button>
                             </div>
                         </div>

@@ -125,7 +125,7 @@ def create_payment():
         amount=amount,
         payment_type='single',
         status='completed',
-        transaction_id=f"TXN{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{user_id}"
+        transaction_id=f"TXN{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}{user_id}"
     )
     
     db.session.add(payment)
@@ -231,7 +231,7 @@ def create_subscription():
         amount=amount,
         payment_type='subscription',
         status='completed',
-        transaction_id=f"SUB{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{user_id}"
+        transaction_id=f"SUB{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}{user_id}"
     )
     db.session.add(payment)
     db.session.commit()
@@ -618,7 +618,7 @@ def topup_wallet():
         amount=amount,
         payment_type='topup',
         status='completed',
-        transaction_id=f"TOPUP{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{user_id}"
+        transaction_id=f"TOPUP{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}{user_id}"
     )
     
     db.session.add(payment)

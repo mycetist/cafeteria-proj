@@ -1113,7 +1113,6 @@ main {
 /* Rating Selector */
 .rating-selector .btn-group {
     border-radius: 8px;
-    overflow: hidden;
 }
 
 .rating-selector .btn {
